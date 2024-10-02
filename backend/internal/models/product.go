@@ -1,14 +1,23 @@
 package models
 
-import (
-	"go.mongodb.org/mongo-driver/bson/primitive"
-)
-
 type Product struct {
-	ID          primitive.ObjectID `json:"_id" bson:"_id,omitempty" form:"_id,omitempty"`
-	Name        string             `json:"name" bson:"name" form:"name"`
-	Description string             `json:"description" bson:"description" form:"description"`
-	Price       float64            `json:"price" bson:"price" form:"price"`
-	Category    string             `json:"category" bson:"category" form:"category"`
-	Stock       int                `json:"stock" bson:"stock" form:"stock"`
+  ProductID   string `json:"product_id"` 
+  ProductName  string `json:"product_name"`
+  Description  string `json:"description"`
+  Price        float64 `json:"price"`
+  Category     string `json:"category"`  
+  Stock        int    `json:"stock"`     
+
+
+  Instructions  string `json:"instructions"`
+  ManufacturedIn string `json:"manufactured_in"`
+  Origin        string `json:"origin"`
+  Usage         string `json:"usage"`
+  Storage       string `json:"storage"`
+  ExpirationDate string `json:"expiration_date"`
+  Capacity      string `json:"capacity"`
+  Features      string `json:"features"`
+  Ingredients   string `json:"ingredients"`
+  DefaultImage  string `json:"default_image"`
+  TargetCustomers string `json:"target_customers"`
 }

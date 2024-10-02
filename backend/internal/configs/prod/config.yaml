@@ -1,0 +1,41 @@
+package config
+
+import (
+	"context"
+	"log"
+
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+)
+
+var DB neo4j.Driver
+
+func ConnectDB() {
+	uri := "neo4j+s://your-neo4j-aura-uri.databases.neo4j.io"
+	username := "neo4j"
+	password := "your-password"
+
+	// Tạo driver kết nối với Neo4j Aura
+	driver, err := neo4j.NewDriverWithBasicAuth(uri, username, password, nil)
+	if err != nil {
+		log.Fatalf("Could not create Neo4j driver: %v", err)
+	}
+
+	// Kiểm tra kết nối
+	err = driver.VerifyConnectivity()
+	if err != nil {
+		log.Fatalf("Could not verify Neo4j connection: %v", err)
+	}
+
+	log.Println("Connected to Neo4j Aura!")
+	DB = driver
+}
+
+func DisconnectDB() {
+	if DB != nil {
+		err := DB.Close()
+		if err != nil {
+			log.Fatalf("Could not close Neo4j connection: %v", err)
+		}
+		log.Println("Disconnected from Neo4j Aura.")
+	}
+}
