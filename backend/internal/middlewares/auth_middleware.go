@@ -62,9 +62,9 @@ func AuthMiddleware() fiber.Handler {
 			isAdmin = false
 		}
 
-		c.Locals("userID", userID)    
-		c.Locals("isAdmin", isAdmin)  
+		c.Locals("userID", userID)
+		c.Locals("isAdmin", isAdmin)
 
-		return c.Next() 
+		return c.Next()
 	}
 }
