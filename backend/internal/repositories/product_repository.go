@@ -161,10 +161,11 @@ func (repo *productRepository) CreateProduct(product models.Product, categoryID 
 	defer tx.Close(ctx)
 
 	productMap := product.ToMap()
+	product.IsActive = true // Mặc định isActive là true
 
-	// Kiểm tra sự tồn tại của Category
+	// Kiểm tra sự tồn tại của Category và thuộc tính is_active
 	categoryExistsResult, err := tx.Run(ctx,
-		"MATCH (c:Category {category_id: $categoryID}) RETURN c",
+		"MATCH (c:Category {category_id: $categoryID, is_active: true}) RETURN c",
 		map[string]interface{}{
 			"categoryID": categoryID,
 		},
@@ -174,12 +175,12 @@ func (repo *productRepository) CreateProduct(product models.Product, categoryID 
 	}
 
 	if !categoryExistsResult.Next(ctx) {
-		return errors.New("category does not exist")
+		return errors.New("category does not exist or is not active")
 	}
 
-	// Kiểm tra sự tồn tại của Supplier
+	// Kiểm tra sự tồn tại của Supplier và thuộc tính is_active
 	supplierExistsResult, err := tx.Run(ctx,
-		"MATCH (s:Supplier {supplier_id: $supplierID}) RETURN s",
+		"MATCH (s:Supplier {supplier_id: $supplierID, is_active: true}) RETURN s",
 		map[string]interface{}{
 			"supplierID": supplierID,
 		},
@@ -189,7 +190,7 @@ func (repo *productRepository) CreateProduct(product models.Product, categoryID 
 	}
 
 	if !supplierExistsResult.Next(ctx) {
-		return errors.New("supplier does not exist")
+		return errors.New("supplier does not exist or is not active")
 	}
 
 	// Tạo Product nếu chưa tồn tại
@@ -208,7 +209,7 @@ func (repo *productRepository) CreateProduct(product models.Product, categoryID 
 			`CREATE (p:Product {product_id: $product_id, product_name: $product_name, description: $description, 
               default_price: $default_price, capacity: $capacity, ingredients: $ingredients, 
               default_image: $default_image, expiration_date: $expiration_date, storage: $storage, 
-              created_at: $created_at, target_customers: $target_customers})`,
+              created_at: $created_at, target_customers: $target_customers, is_active: $is_active})`,
 			productMap,
 		)
 		if err != nil {
@@ -252,27 +253,49 @@ func (repo *productRepository) CreateProduct(product models.Product, categoryID 
 }
 
 func (repo *productRepository) UpdateProduct(id string, product models.Product) error {
-	ctx := context.Background()
-	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
-	defer session.Close(ctx)
+    ctx := context.Background()
+    session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
+    defer session.Close(ctx)
 
-	tx, err := session.BeginTransaction(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Close(ctx)
+    tx, err := session.BeginTransaction(ctx)
+    if err != nil {
+        return err
+    }
+    defer tx.Close(ctx)
 
-	productMap := product.ToMap()
+    productMap := product.ToMap()
 
-	_, err = tx.Run(ctx,
-		"MATCH (p:Product {product_id: $product_id}) SET p.product_name = $product_name, p.description = $description, p.default_price = $default_price, p.capacity = $capacity, p.ingredients = $ingredients, p.default_image = $default_image, p.expiration_date = $expiration_date, p.storage = $storage, p.created_at = $created_at, p.target_customers = $target_customers RETURN p",
-		productMap,
-	)
-	if err != nil {
-		return err
-	}
+    // Kiểm tra sản phẩm có tồn tại hay không
+    productExistsResult, err := tx.Run(ctx,
+        "MATCH (p:Product {product_id: $product_id}) RETURN p",
+        map[string]interface{}{
+            "product_id": id,
+        },
+    )
+    if err != nil {
+        return err
+    }
 
-	return tx.Commit(ctx)
+    if !productExistsResult.Next(ctx) {
+        return errors.New("product does not exist")
+    }
+
+    _, err = tx.Run(ctx,
+        `MATCH (p:Product {product_id: $product_id}) 
+         SET p.product_name = $product_name, p.description = $description, 
+             p.default_price = $default_price, p.capacity = $capacity, 
+             p.ingredients = $ingredients, p.default_image = $default_image, 
+             p.expiration_date = $expiration_date, p.storage = $storage, 
+             p.created_at = $created_at, p.target_customers = $target_customers, 
+             p.is_active = $is_active  // Sửa thành '='
+         RETURN p`,
+        productMap,
+    )
+    if err != nil {
+        return err
+    }
+
+    return tx.Commit(ctx)
 }
 
 func (repo *productRepository) DeleteProduct(id string) error {
@@ -286,9 +309,30 @@ func (repo *productRepository) DeleteProduct(id string) error {
 	}
 	defer tx.Close(ctx)
 
-	_, err = tx.Run(ctx, "MATCH (p:Product {product_id: $product_id}) DETACH DELETE p", map[string]interface{}{
-		"product_id": id,
-	})
+	// Kiểm tra sản phẩm có tồn tại và is_active = true
+	productExistsResult, err := tx.Run(ctx,
+		"MATCH (p:Product {product_id: $product_id, is_active: true}) RETURN p",
+		map[string]interface{}{
+			"product_id": id,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	if !productExistsResult.Next(ctx) {
+		return errors.New("product does not exist or is not active")
+	}
+
+	// Cập nhật is_active từ true thành false
+	_, err = tx.Run(ctx,
+		`MATCH (p:Product {product_id: $product_id, is_active: true}) 
+         SET p.is_active = false 
+         RETURN p`,
+		map[string]interface{}{
+			"product_id": id,
+		},
+	)
 	if err != nil {
 		return err
 	}

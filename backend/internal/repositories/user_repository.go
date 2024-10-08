@@ -14,6 +14,7 @@ type UserRepository interface {
 	Repository[models.User]
 	GetUsersByName(name string) ([]models.User, error)
 	GetUserByEmail(email string) (*models.User, error)
+	GetOrdersByUserID(id string) ([]models.Order, error)
 }
 
 type userRepository struct {
@@ -262,4 +263,41 @@ func (repo *userRepository) GetUserByEmail(email string) (*models.User, error) {
 	}
 
 	return nil, errors.New("user with email " + email + " not found")
+}
+
+func (repo *userRepository) GetOrdersByUserID(id string) ([]models.Order, error) {
+	ctx := context.Background()
+	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
+	defer session.Close(ctx)
+
+	query := `
+		MATCH (u:User {id: $id})-[:PLACED_ORDER]->(o:Order)
+		RETURN o
+	`
+	result, err := session.Run(ctx, query, map[string]interface{}{
+		"id": id,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var orders []models.Order
+	for result.Next(ctx) {
+		record := result.Record()
+		node, _ := record.Get("o")
+		orderNode := node.(neo4j.Node)
+		orderMap := orderNode.Props
+
+		order, err := (&models.Order{}).FromMap(orderMap)
+		if err != nil {
+			return nil, err
+		}
+		orders = append(orders, *order)
+	}
+
+	if len(orders) == 0 {
+		return nil, errors.New("no orders found for the specified user")
+	}
+
+	return orders, nil
 }

@@ -117,86 +117,101 @@ func (repo *productVariantRepository) GetVariantByName(name string) (models.Prod
 }
 
 func (repo *productVariantRepository) CreateVariant(variant models.ProductVariant, productID string) error {
-	ctx := context.Background()
-	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
-	defer session.Close(ctx)
+    ctx := context.Background()
+    session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
+    defer session.Close(ctx)
 
-	tx, err := session.BeginTransaction(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Close(ctx)
+    tx, err := session.BeginTransaction(ctx)
+    if err != nil {
+        return err
+    }
+    defer tx.Close(ctx)
 
-	// Kiểm tra sự tồn tại của sản phẩm
-	productExistsResult, err := tx.Run(ctx,
-		"MATCH (p:Product {product_id: $productID}) RETURN p",
-		map[string]interface{}{
-			"productID": productID,
-		},
-	)
-	if err != nil {
-		return err
-	}
+    // Kiểm tra sự tồn tại của sản phẩm và is_active = true
+    productExistsResult, err := tx.Run(ctx,
+        "MATCH (p:Product {product_id: $productID, is_active: true}) RETURN p",
+        map[string]interface{}{
+            "productID": productID,
+        },
+    )
+    if err != nil {
+        return err
+    }
 
-	// Nếu không tìm thấy product
-	if !productExistsResult.Next(ctx) {
-		return errors.New("product with ID " + productID + " does not exist")
-	}
+    if !productExistsResult.Next(ctx) {
+        return errors.New("product does not exist or is not active")
+    }
 
-	// Tạo node ProductVariant
-	variantMap := variant.ToMap()
+    // Tạo node ProductVariant
+    variantMap := variant.ToMap()
+    variantMap["is_active"] = true  
 
-	_, err = tx.Run(ctx,
-		"CREATE (v:ProductVariant {variant_id: $variant_id, variant_name: $variant_name, size: $size, color: $color, price: $price, stock_quantity: $stock_quantity, thumbnail: $thumbnail})",
-		variantMap,
-	)
-	if err != nil {
-		return err
-	}
+    _, err = tx.Run(ctx,
+        "CREATE (v:ProductVariant {variant_id: $variant_id, variant_name: $variant_name, size: $size, color: $color, price: $price, stock_quantity: $stock_quantity, thumbnail: $thumbnail, is_active: $is_active})",
+        variantMap,
+    )
+    if err != nil {
+        return err
+    }
 
-	// Tạo relationship BELONGS_TO giữa ProductVariant và Product
-	_, err = tx.Run(ctx,
-		`
-		MATCH (p:Product {product_id: $productID}), (v:ProductVariant {variant_id: $variant_id})
-		MERGE (v)-[r:BELONGS_TO]->(p)
-		RETURN r
-		`,
-		map[string]interface{}{
-			"productID":  productID,
-			"variant_id": variantMap["variant_id"],
-		},
-	)
-	if err != nil {
-		return err
-	}
+    // Tạo relationship BELONGS_TO giữa ProductVariant và Product
+    _, err = tx.Run(ctx,
+        `
+        MATCH (p:Product {product_id: $productID}), (v:ProductVariant {variant_id: $variant_id})
+        MERGE (v)-[r:BELONGS_TO]->(p)
+        RETURN r
+        `,
+        map[string]interface{}{
+            "productID":  productID,
+            "variant_id": variantMap["variant_id"],
+        },
+    )
+    if err != nil {
+        return err
+    }
 
-	return tx.Commit(ctx)
+    return tx.Commit(ctx)
 }
-
 
 func (repo *productVariantRepository) UpdateVariant(id string, variant models.ProductVariant) error {
-	ctx := context.Background()
-	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
-	defer session.Close(ctx)
+    ctx := context.Background()
+    session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
+    defer session.Close(ctx)
 
-	tx, err := session.BeginTransaction(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Close(ctx)
+    tx, err := session.BeginTransaction(ctx)
+    if err != nil {
+        return err
+    }
+    defer tx.Close(ctx)
 
-	variantMap := variant.ToMap()
+    variantMap := variant.ToMap()
 
-	_, err = tx.Run(ctx,
-		"MATCH (v:ProductVariant {variant_id: $variant_id}) SET v.variant_name = $variant_name, v.size = $size, v.color = $color, v.price = $price, v.stock_quantity = $stock_quantity, v.thumbnail = $thumbnail RETURN v",
-		variantMap,
-	)
-	if err != nil {
-		return err
-	}
+    // Kiểm tra variant có tồn tại hay không
+    variantExistsResult, err := tx.Run(ctx,
+        "MATCH (v:ProductVariant {variant_id: $variant_id}) RETURN v",
+        map[string]interface{}{
+            "variant_id": id,
+        },
+    )
+    if err != nil {
+        return err
+    }
 
-	return tx.Commit(ctx)
+    if !variantExistsResult.Next(ctx) {
+        return errors.New("variant does not exist")
+    }
+	
+    _, err = tx.Run(ctx,
+        "MATCH (v:ProductVariant {variant_id: $variant_id}) SET v.variant_name = $variant_name, v.size = $size, v.color = $color, v.price = $price, v.stock_quantity = $stock_quantity, v.thumbnail = $thumbnail, v.is_active = $is_active RETURN v", // Sửa thành '='
+        variantMap,
+    )
+    if err != nil {
+        return err
+    }
+
+    return tx.Commit(ctx)
 }
+
 
 func (repo *productVariantRepository) DeleteVariant(id string) error {
     ctx := context.Background()
@@ -209,9 +224,12 @@ func (repo *productVariantRepository) DeleteVariant(id string) error {
     }
     defer tx.Close(ctx)
 
-    _, err = tx.Run(ctx, "MATCH (v:ProductVariant {variant_id: $variant_id}) DETACH DELETE v", map[string]interface{}{
-        "variant_id": id,
-    })
+    _, err = tx.Run(ctx, 
+        "MATCH (v:ProductVariant {variant_id: $variant_id, is_active: true}) SET v.is_active = false RETURN v", 
+        map[string]interface{}{
+            "variant_id": id,
+        },
+    )
     if err != nil {
         return err
     }

@@ -17,6 +17,7 @@ type UserService interface {
 	ForgotPassword(email string) error
 	ChangePassword(userID, oldPassword, newPassword string) error
 	ComparePassword(hashedPassword string, plainPassword string) error
+	GetOrdersByUserID(id string) ([]models.Order, error)
 }
 
 type userService struct {
@@ -143,4 +144,8 @@ func (s *userService) ChangePassword(userID, oldPassword, newPassword string) er
 	// Update password in the database
 	user.Password = string(hashedPassword)
 	return s.repo.Update(*user)
+}
+
+func (s *userService) GetOrdersByUserID(id string) ([]models.Order, error) {
+	return s.repo.GetOrdersByUserID(id)
 }
