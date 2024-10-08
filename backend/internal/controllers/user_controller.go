@@ -131,7 +131,7 @@ func (uc *UserController) DeleteUser(c *fiber.Ctx) error {
 		Message: "User deleted succesfully",
 		Data:    nil,
 	})
-}
+
 
 // Update
 func (uc *UserController) UpdateUser(c *fiber.Ctx) error {
@@ -180,3 +180,4 @@ func (uc *UserController) UpdateUser(c *fiber.Ctx) error {
         Data:    updatedData,
     })
 }
+
