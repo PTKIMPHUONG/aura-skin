@@ -5,7 +5,6 @@ import (
 	"auraskin/internal/services"
 	APIResponse "auraskin/pkg/api_response"
 	"auraskin/pkg/jwt"
-
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -131,7 +130,7 @@ func (uc *UserController) DeleteUser(c *fiber.Ctx) error {
 		Message: "User deleted succesfully",
 		Data:    nil,
 	})
-
+}
 
 // Update
 func (uc *UserController) UpdateUser(c *fiber.Ctx) error {
@@ -181,3 +180,19 @@ func (uc *UserController) UpdateUser(c *fiber.Ctx) error {
     })
 }
 
+func (pc *UserController) GetOrdersByUserID(c *fiber.Ctx) error {
+	UserID := c.Params("id")
+	orders, err := pc.service.GetOrdersByUserID(UserID)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusNotFound,
+			Message: "Orders not found for the specified user",
+			Error:   err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+		Status:  fiber.StatusOK,
+		Message: "Orders retrieved successfully",
+		Data:    orders,
+	})
+}

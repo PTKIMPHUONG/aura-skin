@@ -13,6 +13,7 @@ type ProductVariant struct {
 	Price         float64 `json:"price"`
 	StockQuantity int     `json:"stock_quantity"`
 	Thumbnail     string  `json:"thumbnail"`
+	IsActive      bool    `json:"is_active"`
 }
 
 func (pv *ProductVariant) ToMap() map[string]interface{} {
@@ -24,6 +25,7 @@ func (pv *ProductVariant) ToMap() map[string]interface{} {
 		"price":          pv.Price,
 		"stock_quantity": pv.StockQuantity,
 		"thumbnail":      pv.Thumbnail,
+		"is_active":      pv.IsActive,
 	}
 }
 
@@ -43,5 +45,6 @@ func (pv *ProductVariant) FromMap(data map[string]interface{}) (*ProductVariant,
 		Price:         price,
 		StockQuantity: stockQuantity,
 		Thumbnail:     utils.GetString(data, "thumbnail"),
+		IsActive:      utils.GetBool(data, "is_active"),
 	}, nil
 }

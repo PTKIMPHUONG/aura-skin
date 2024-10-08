@@ -8,5 +8,5 @@ tidy:
 	cd backend && go mod tidy
 
 # Optional: Add a default target
-.PHONY: all
+.PHONY: all/
 all: run-server

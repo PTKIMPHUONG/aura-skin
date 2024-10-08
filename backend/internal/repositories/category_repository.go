@@ -118,40 +118,45 @@ func (repo *categoryRepository) GetProductsByCategoryID(categoryID string) ([]mo
 }
 
 func (repo *categoryRepository) CreateCategory(category models.Category) error {
-	ctx := context.Background()
-	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
-	defer session.Close(ctx)
+    ctx := context.Background()
+    session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
+    defer session.Close(ctx)
 
-	categoryMap := category.ToMap()
+    categoryMap := category.ToMap()
+    categoryMap["is_active"] = true 
 
-	_, err := session.Run(ctx,
-		"CREATE (c:Category {category_id: $category_id, category_name: $category_name})",
-		categoryMap,
-	)
-	return err
+    _, err := session.Run(ctx,
+        "CREATE (c:Category {category_id: $category_id, category_name: $category_name, is_active: $is_active})",
+        categoryMap,
+    )
+    return err
 }
 
 func (repo *categoryRepository) UpdateCategory(id string, category models.Category) error {
-	ctx := context.Background()
-	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
-	defer session.Close(ctx)
+    ctx := context.Background()
+    session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
+    defer session.Close(ctx)
 
-	categoryMap := category.ToMap()
+    categoryMap := category.ToMap()
 
-	_, err := session.Run(ctx,
-		"MATCH (c:Category {category_id: $category_id}) SET c.category_name = $category_name",
-		categoryMap,
-	)
-	return err
+    _, err := session.Run(ctx,
+        "MATCH (c:Category {category_id: $category_id}) SET c.category_name = $category_name, c.is_active = $is_active",
+        categoryMap, 
+    )
+    return err
 }
 
 func (repo *categoryRepository) DeleteCategory(id string) error {
-	ctx := context.Background()
-	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
-	defer session.Close(ctx)
+    ctx := context.Background()
+    session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
+    defer session.Close(ctx)
 
-	_, err := session.Run(ctx, "MATCH (c:Category {category_id: $id}) DELETE c", map[string]interface{}{
-		"id": id,
-	})
-	return err
+    _, err := session.Run(ctx, 
+        "MATCH (c:Category {category_id: $id, is_active: true}) SET c.is_active = false RETURN c", 
+        map[string]interface{}{
+            "id": id,
+        },
+    )
+    return err
 }
+

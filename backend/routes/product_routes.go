@@ -2,17 +2,24 @@ package routes
 
 import (
 	"auraskin/internal/controllers"
+	"auraskin/internal/repositories"
+	"auraskin/internal/services"
+
 	"github.com/gofiber/fiber/v2"
 )
 
-func ProductRoutes(app *fiber.App, productController *controllers.ProductController) {
+func ProductRoutes(app *fiber.App) {
+	productRepo := repositories.NewProductRepository(neo4jDB)
+	productService := services.NewProductService(productRepo)
+	productController := controllers.NewProductController(productService)
+
 	productGroup := app.Group("/products")
 
 	productGroup.Get("/", productController.GetAllProducts)
 	productGroup.Get("/:id", productController.GetProductByID)
 	productGroup.Get("/:product_id/product-variants", productController.GetVariantsByProductID)
 	productGroup.Get("/:product_name/product-variants", productController.GetVariantsByProductName)
-	productGroup.Post("/", productController.CreateProduct)
-	productGroup.Put("/:id", productController.UpdateProduct)
-	productGroup.Delete("/:id", productController.DeleteProduct)
+	productGroup.Post("/create", productController.CreateProduct)
+	productGroup.Put("/update/:id", productController.UpdateProduct)
+	productGroup.Delete("/delete/:id", productController.DeleteProduct)
 }

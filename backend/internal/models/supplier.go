@@ -15,6 +15,7 @@ type Supplier struct {
 	SupplierPhone string `json:"supplier_phone"`
 	DefaultImage  string `json:"default_image"`
 	CreatedAt     string `json:"created_at"`
+	IsActive        bool    `json:"is_active"`
 }
 
 func (s *Supplier) ToMap() map[string]interface{} {
@@ -25,6 +26,7 @@ func (s *Supplier) ToMap() map[string]interface{} {
 		"supplier_phone": s.SupplierPhone,
 		"default_image":  s.DefaultImage,
 		"created_at":     s.CreatedAt,
+		"is_active":      s.IsActive,
 	}
 }
 
@@ -64,5 +66,6 @@ func (s *Supplier) FromMap(data map[string]interface{}) (*Supplier, error) {
 		SupplierPhone: utils.GetString(data, "supplier_phone"),
 		DefaultImage:  utils.GetString(data, "default_image"),
 		CreatedAt:     createdAt,
+		IsActive:      utils.GetBool(data, "is_active"),
 	}, nil
 }

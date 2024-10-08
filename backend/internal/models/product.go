@@ -24,6 +24,7 @@ type Product struct {
 	ExpirationDate  string  `json:"expiration_date"`
 	CreatedAt       string  `json:"created_at"`
 	TargetCustomers string  `json:"target_customers"`
+	IsActive        bool    `json:"is_active"`
 }
 
 func (p *Product) ToMap() map[string]interface{} {
@@ -43,6 +44,7 @@ func (p *Product) ToMap() map[string]interface{} {
 		"expiration_date":  p.ExpirationDate,
 		"created_at":       p.CreatedAt,
 		"target_customers": p.TargetCustomers,
+		"is_active":        p.IsActive,
 	}
 }
 
@@ -91,7 +93,6 @@ func (p *Product) FromMap(data map[string]interface{}) (*Product, error) {
 		}
 	}
 
-	// Trả về Product với các trường đã được xử lý
 	return &Product{
 		ProductID:       utils.GetString(data, "product_id"),
 		ProductName:     utils.GetString(data, "product_name"),
@@ -108,6 +109,7 @@ func (p *Product) FromMap(data map[string]interface{}) (*Product, error) {
 		ExpirationDate:  expirationDate,
 		CreatedAt:       createdAt,
 		TargetCustomers: utils.GetString(data, "target_customers"),
+		IsActive:        utils.GetBool(data, "is_active"),
 	}, nil
 }
 
