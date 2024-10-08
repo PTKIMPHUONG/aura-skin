@@ -1,5 +1,5 @@
 neo4j:
-  uri: "neo4j+s://8dceaec0.databases.neo4j.io:7687"
+  uri: "neo4j+s://8dceaec0.databases.neo4j.io"
   username: "neo4j"
   password: "1GxATeg7jfVv-zxjxPJdPwAgfwSgEo8l575wnyalQH4"
 
