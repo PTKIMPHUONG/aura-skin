@@ -17,8 +17,10 @@ func ProductVariantRoutes(app *fiber.App) {
 
 	productVariantGroup.Get("/", productVariantController.GetAllVariants)
 	productVariantGroup.Get("/:id", productVariantController.GetVariantByID)
-	productVariantGroup.Get("/:name", productVariantController.GetVariantByName)
+	productVariantGroup.Get("/search/:name", productVariantController.GetVariantByName)
 	productVariantGroup.Post("/create", productVariantController.CreateVariant)
 	productVariantGroup.Put("/update/:variant_id", productVariantController.UpdateVariant)
 	productVariantGroup.Delete("/delete/:variant_id", productVariantController.DeleteVariant)
+	productVariantGroup.Post("/upload-thumbnail/:variant_id", productVariantController.UploadThumbnail)
+
 }

@@ -18,7 +18,7 @@ func ProductRoutes(app *fiber.App) {
 	productGroup.Get("/", productController.GetAllProducts)
 	productGroup.Get("/:id", productController.GetProductByID)
 	productGroup.Get("/:product_id/product-variants", productController.GetVariantsByProductID)
-	productGroup.Get("/:product_name/product-variants", productController.GetVariantsByProductName)
+	productGroup.Get("/search/:product_name/product-variants", productController.GetVariantsByProductName)
 	productGroup.Post("/create", productController.CreateProduct)
 	productGroup.Put("/update/:id", productController.UpdateProduct)
 	productGroup.Delete("/delete/:id", productController.DeleteProduct)

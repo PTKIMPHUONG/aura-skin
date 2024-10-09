@@ -3,6 +3,7 @@ package services
 import (
 	"auraskin/internal/models"
 	"auraskin/internal/repositories"
+	"mime/multipart"
 )
 
 type ProductVariantService interface {
@@ -12,6 +13,8 @@ type ProductVariantService interface {
 	CreateVariant(variant models.ProductVariant, productID string) error
 	UpdateVariant(id string, variant models.ProductVariant) error
 	DeleteVariant(id string) error
+	UploadThumbnailAndSetURL(variantID string, file multipart.File, fileHeader *multipart.FileHeader) (string, error)
+
 }
 
 type productVariantService struct {
@@ -44,4 +47,8 @@ func (s *productVariantService) UpdateVariant(id string, variant models.ProductV
 
 func (s *productVariantService) DeleteVariant(id string) error {
 	return s.repo.DeleteVariant(id)
+}
+
+func (s *productVariantService) UploadThumbnailAndSetURL(variantID string, file multipart.File, fileHeader *multipart.FileHeader) (string, error) {
+	return s.repo.UploadThumbnailAndSetURL(variantID, file, fileHeader)
 }
