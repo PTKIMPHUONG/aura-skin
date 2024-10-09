@@ -151,3 +151,40 @@ func (vc *ProductVariantController) DeleteVariant(c *fiber.Ctx) error {
 		Message: "Variant deleted successfully",
 	})
 }
+func (vc *ProductVariantController) UploadThumbnail(c *fiber.Ctx) error {
+	variantID := c.Params("variant_id")
+
+	fileHeader, err := c.FormFile("thumbnail")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusBadRequest,
+			Message: "Invalid file",
+			Error:   err.Error(),
+		})
+	}
+
+	file, err := fileHeader.Open()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Unable to open file",
+			Error:   err.Error(),
+		})
+	}
+	defer file.Close()
+
+	thumbnailURL, err := vc.service.UploadThumbnailAndSetURL(variantID, file, fileHeader)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to upload and update thumbnail",
+			Error:   err.Error(),
+		})
+	}
+
+	return c.JSON(APIResponse.SuccessResponse{
+		Status:  fiber.StatusOK,
+		Message: "Thumbnail uploaded successfully",
+		Data:    fiber.Map{"thumbnail_url": thumbnailURL},
+	})
+}
