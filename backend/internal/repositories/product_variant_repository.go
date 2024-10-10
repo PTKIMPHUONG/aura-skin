@@ -18,6 +18,8 @@ import (
 
 type ProductVariantRepository interface {
 	GetAllVariants() ([]models.ProductVariant, error)
+	GetSuggestVariantsForUser(userID string) (*[]models.ProductVariant, error)
+	GetSuggestVariantsForAVariant(id string) (*[]models.ProductVariant, error)
 	GetVariantByID(id string) (models.ProductVariant, error)
 	GetVariantByName(name string) (models.ProductVariant, error)
 	CreateVariant(variant models.ProductVariant, productID string) error
@@ -59,6 +61,106 @@ func (repo *productVariantRepository) GetAllVariants() ([]models.ProductVariant,
 	}
 
 	return variants, nil
+}
+
+func (repo *productVariantRepository) GetSuggestVariantsForAVariant(id string) (*[]models.ProductVariant, error) {
+	ctx := context.Background()
+	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
+	defer session.Close(ctx)
+
+	query := `
+        MATCH (inputPV:ProductVariant {variant_id: $variantID})-[:BELONGS_TO]->(p:Product)-[:BELONGS_TO]->(c:Category)
+        MATCH (similarPV:ProductVariant)-[:BELONGS_TO]->(similarP:Product)-[:BELONGS_TO]->(c)
+        WHERE similarPV <> inputPV
+        RETURN DISTINCT similarPV AS recommendedProductVariant
+        LIMIT 4
+    `
+
+	params := map[string]interface{}{
+		"variantID": id,
+	}
+
+	result, err := session.Run(ctx, query, params)
+	if err != nil {
+		return nil, err
+	}
+
+	var variants []models.ProductVariant
+	for result.Next(ctx) {
+		record := result.Record()
+		node, _ := record.Get("recommendedProductVariant")
+		variantNode := node.(neo4j.Node)
+
+		variantMap := variantNode.Props
+		variant, err := (&models.ProductVariant{}).FromMap(variantMap)
+		if err != nil {
+			return nil, err
+		}
+		variants = append(variants, *variant)
+	}
+
+	if len(variants) == 0 {
+		return nil, errors.New("no recommended products found")
+	}
+
+	return &variants, nil
+}
+
+func (repo *productVariantRepository) GetSuggestVariantsForUser(userID string) (*[]models.ProductVariant, error) {
+	ctx := context.Background()
+	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
+	defer session.Close(ctx)
+
+	query := `
+        // Dựa trên lịch sử mua hàng
+		MATCH (user:User {id: $userID})-[:PLACED_ORDER]->(:Order)-[:CONTAINS]->(purchasedVariant:ProductVariant)-[:BELONGS_TO]->(:Product)-[:BELONGS_TO]->(category:Category)
+		WITH category, collect(purchasedVariant) AS purchasedVariants
+		MATCH (otherVariant:ProductVariant)-[:BELONGS_TO]->(:Product)-[:BELONGS_TO]->(category)
+		WHERE NOT otherVariant IN purchasedVariants
+		RETURN DISTINCT otherVariant AS recommendedVariant
+		UNION
+		// Dựa trên wishlist
+		MATCH (user:User {id: $userID})-[:HAS_WISHLIST]->(:Wishlist)-[:WISHES_FOR_VARIANT]->(wishlistVariant:ProductVariant)-[:BELONGS_TO]->(:Product)-[:BELONGS_TO]->(c:Category)
+		WITH c
+		MATCH (otherVariant:ProductVariant)-[:BELONGS_TO]->(:Product)-[:BELONGS_TO]->(c)
+		RETURN DISTINCT otherVariant AS recommendedVariant
+		UNION
+		// Dựa trên khuyến mãi
+		MATCH (sale:Sale)-[:APPLIES_TO_VARIANT]->(discountedVariant:ProductVariant)
+		RETURN DISTINCT discountedVariant AS recommendedVariant
+    `
+
+	params := map[string]interface{}{
+		"userID": userID,
+	}
+
+	result, err := session.Run(ctx, query, params)
+	if err != nil {
+		return nil, err
+	}
+
+	var variants []models.ProductVariant
+	for result.Next(ctx) {
+		record := result.Record()
+		node, ok := record.Get("recommendedVariant")
+		if !ok {
+			continue
+		}
+		variantNode := node.(neo4j.Node)
+
+		variantMap := variantNode.Props
+		variant, err := (&models.ProductVariant{}).FromMap(variantMap)
+		if err != nil {
+			return nil, err
+		}
+		variants = append(variants, *variant)
+	}
+
+	if len(variants) == 0 {
+		return nil, errors.New("no recommended products found")
+	}
+
+	return &variants, nil
 }
 
 func (repo *productVariantRepository) GetVariantByID(id string) (models.ProductVariant, error) {

@@ -22,5 +22,6 @@ func ProductVariantRoutes(app *fiber.App) {
 	productVariantGroup.Put("/update/:variant_id", productVariantController.UpdateVariant)
 	productVariantGroup.Delete("/delete/:variant_id", productVariantController.DeleteVariant)
 	productVariantGroup.Post("/upload-thumbnail/:variant_id", productVariantController.UploadThumbnail)
-
+	productVariantGroup.Get("/suggest/user/:userID", productVariantController.GetSuggestVariantsForUser)
+	productVariantGroup.Get("/suggest/variant/:id", productVariantController.GetSuggestVariantsForAVariant)
 }

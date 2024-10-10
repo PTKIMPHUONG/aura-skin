@@ -14,7 +14,8 @@ type ProductVariantService interface {
 	UpdateVariant(id string, variant models.ProductVariant) error
 	DeleteVariant(id string) error
 	UploadThumbnailAndSetURL(variantID string, file multipart.File, fileHeader *multipart.FileHeader) (string, error)
-
+	GetSuggestVariantsForUser(userID string) (*[]models.ProductVariant, error)
+	GetSuggestVariantsForAVariant(id string) (*[]models.ProductVariant, error)
 }
 
 type productVariantService struct {
@@ -51,4 +52,12 @@ func (s *productVariantService) DeleteVariant(id string) error {
 
 func (s *productVariantService) UploadThumbnailAndSetURL(variantID string, file multipart.File, fileHeader *multipart.FileHeader) (string, error) {
 	return s.repo.UploadThumbnailAndSetURL(variantID, file, fileHeader)
+}
+
+func (s *productVariantService) GetSuggestVariantsForUser(userID string) (*[]models.ProductVariant, error) {
+	return s.repo.GetSuggestVariantsForUser(userID)
+}
+
+func (s *productVariantService) GetSuggestVariantsForAVariant(id string) (*[]models.ProductVariant, error) {
+	return s.repo.GetSuggestVariantsForAVariant(id)
 }

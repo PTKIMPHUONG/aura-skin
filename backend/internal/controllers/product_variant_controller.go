@@ -188,3 +188,37 @@ func (vc *ProductVariantController) UploadThumbnail(c *fiber.Ctx) error {
 		Data:    fiber.Map{"thumbnail_url": thumbnailURL},
 	})
 }
+
+func (vc *ProductVariantController) GetSuggestVariantsForUser(c *fiber.Ctx) error {
+	userID := c.Params("userID")
+	variants, err := vc.service.GetSuggestVariantsForUser(userID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Unable to fetch suggested variants for user",
+			Error:   err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+		Status:  fiber.StatusOK,
+		Message: "Suggested variants for user retrieved successfully",
+		Data:    variants,
+	})
+}
+
+func (vc *ProductVariantController) GetSuggestVariantsForAVariant(c *fiber.Ctx) error {
+	id := c.Params("id")
+	variants, err := vc.service.GetSuggestVariantsForAVariant(id)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Unable to fetch suggested variants for the variant",
+			Error:   err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+		Status:  fiber.StatusOK,
+		Message: "Suggested variants for the variant retrieved successfully",
+		Data:    variants,
+	})
+}
