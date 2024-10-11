@@ -10,9 +10,9 @@ import (
 var DB neo4j.Driver
 
 func ConnectDB() {
-	uri := "neo4j+s://your-neo4j-aura-uri.databases.neo4j.io"
+	uri := "neo4j+s://8dceaec0.databases.neo4j.io"
 	username := "neo4j"
-	password := "your-password"
+	password := "1GxATeg7jfVv-zxjxPJdPwAgfwSgEo8l575wnyalQH4"
 
 	// Tạo driver kết nối với Neo4j Aura
 	driver, err := neo4j.NewDriverWithBasicAuth(uri, username, password, nil)

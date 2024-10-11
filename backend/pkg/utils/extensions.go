@@ -30,6 +30,21 @@ func GetString(data map[string]interface{}, key string) string {
 	return ""
 }
 
+func GetStringArray(data map[string]interface{}, key string) []string {
+	if val, ok := data[key]; ok {
+		if array, ok := val.([]interface{}); ok {
+			strArray := make([]string, len(array))
+			for i, v := range array {
+				if str, ok := v.(string); ok {
+					strArray[i] = str
+				}
+			}
+			return strArray
+		}
+	}
+	return []string{}
+}
+
 func GetBool(data map[string]interface{}, key string) bool {
 	if val, ok := data[key]; ok {
 		if b, ok := val.(bool); ok {
@@ -67,5 +82,23 @@ func GetInt(data map[string]interface{}, key string) int {
 		}
 	}
 	return 0
+}
+
+func GetStringSlice(data map[string]interface{}, key string) []string {
+	if val, ok := data[key]; ok {
+		if strSlice, ok := val.([]string); ok {
+			return strSlice
+		}
+		if interfaceSlice, ok := val.([]interface{}); ok {
+			var result []string
+			for _, v := range interfaceSlice {
+				if str, ok := v.(string); ok {
+					result = append(result, str)
+				}
+			}
+			return result
+		}
+	}
+	return []string{}
 }
 
