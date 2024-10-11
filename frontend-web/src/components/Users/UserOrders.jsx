@@ -41,14 +41,14 @@ const UserOrders = ({ orders }) => {
       {statuses.map((status, index) => (
         <TabPanel value={value} index={index} key={index}>
           {filterOrders(status).map((order) => (
-            <Paper key={order.id} sx={{ p: 2, mb: 2 }}>
+            <Paper key={order.order_id} sx={{ p: 2, mb: 2 }}>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
                   <Typography variant="subtitle1">
-                    Đơn hàng #{order.id}
+                    Đơn hàng #{order.order_id}
                   </Typography>
                   <Typography variant="body2">
-                    Ngày đặt: {order.date}
+                    Ngày đặt: {new Date(order.created_at).toLocaleDateString()}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -56,26 +56,24 @@ const UserOrders = ({ orders }) => {
                     Trạng thái: {order.status}
                   </Typography>
                   <Typography variant="body2" align="right">
-                    Tổng tiền: {order.total.toLocaleString()} đ
+                    Tổng tiền: {order.total_amount.toLocaleString()} đ
                   </Typography>
                 </Grid>
-                {order.items.map((item) => (
-                  <Grid item xs={12} key={item.productId}>
-                    <Box sx={{ display: "flex", alignItems: "center" }}>
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        style={{ width: 50, height: 50, marginRight: 10 }}
-                      />
-                      <Box>
-                        <Typography variant="body1">{item.name}</Typography>
-                        <Typography variant="body2">
-                          Số lượng: {item.quantity}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
-                ))}
+                <Grid item xs={12}>
+                  <Typography variant="body2">
+                    Người nhận: {order.recipient_name}
+                  </Typography>
+                  <Typography variant="body2">
+                    Số điện thoại: {order.contact_number}
+                  </Typography>
+                  <Typography variant="body2">
+                    Địa chỉ: {order.address_line}, {order.ward},{" "}
+                    {order.district}, {order.province}, {order.country}
+                  </Typography>
+                  <Typography variant="body2">
+                    Phí vận chuyển: {order.delivery_fee.toLocaleString()} đ
+                  </Typography>
+                </Grid>
               </Grid>
             </Paper>
           ))}

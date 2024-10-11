@@ -9,6 +9,7 @@ const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  // Thêm định nghĩa cho fields ở đây
   const fields = [
     {
       name: "email",
@@ -38,6 +39,7 @@ const Login = () => {
         setError(result.message);
       }
     } catch (error) {
+      console.error("Login error:", error);
       setError("Có lỗi xảy ra khi đăng nhập");
     }
   };

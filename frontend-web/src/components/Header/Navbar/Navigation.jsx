@@ -14,12 +14,13 @@ import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import mockBrands from "../../../data/mockBrands";
-import mockCategories from "../../../data/mockCategories";
+import CategoryService from "../../../services/CategoryService";
 
 const Navigation = () => {
   const navigate = useNavigate();
   const [openMenu, setOpenMenu] = useState(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [categories, setCategories] = useState([]);
   const timeoutRef = useRef();
   const buttonRefs = useRef({});
 
@@ -34,6 +35,16 @@ const Navigation = () => {
       buttonRefs.current[menu] = React.createRef();
     });
     setIsInitialized(true);
+
+    const fetchCategories = async () => {
+      try {
+        const data = await CategoryService.getAllCategories();
+        setCategories(data.filter((category) => category.is_active));
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+    fetchCategories();
 
     return () => {
       clearTimeout(timeoutRef.current);
@@ -92,7 +103,7 @@ const Navigation = () => {
             transition
             disablePortal={false}
             placement="bottom-start"
-            style={{ zIndex: 1300 }} // Thêm z-index cao hơn
+            style={{ zIndex: 1300 }}
           >
             {({ TransitionProps, placement }) => (
               <Grow
@@ -112,16 +123,16 @@ const Navigation = () => {
                     >
                       {items.map((item) => (
                         <MenuItem
-                          key={item.id || item.path}
+                          key={item.category_id || item.id || item.path}
                           component={RouterLink}
                           to={
                             menu === "danhMucSanPham"
-                              ? `/category/${item.id}`
+                              ? `/categories/${item.category_id}/products`
                               : `/${menu}/${item.id || item.path}`
                           }
                           onClick={() => setOpenMenu(null)}
                         >
-                          {item.name || item.label}
+                          {item.category_name || item.name || item.label}
                         </MenuItem>
                       ))}
                     </MenuList>
@@ -159,7 +170,7 @@ const Navigation = () => {
       </IconButton>
       {isInitialized && (
         <>
-          {renderMenu("danhMucSanPham", mockCategories, "DANH MỤC SẢN PHẨM")}
+          {renderMenu("danhMucSanPham", categories, "DANH MỤC SẢN PHẨM")}
           <Button component={RouterLink} to="/products" sx={buttonStyle}>
             DANH SÁCH SẢN PHẨM
           </Button>

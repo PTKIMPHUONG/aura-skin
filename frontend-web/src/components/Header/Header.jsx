@@ -18,6 +18,7 @@ import Navigation from "./Navbar/Navigation"; // Thêm import này
 import { Link, useNavigate } from "react-router-dom";
 import { Avatar, Menu, MenuItem } from "@mui/material";
 import { useAuth } from "../../context/Authcontext";
+import FaceIcon from "@mui/icons-material/Face"; // Import FaceIcon
 
 // Điều chỉnh Search component
 const Search = styled("div")(({ theme }) => ({
@@ -179,11 +180,15 @@ function Header() {
             {user ? (
               <>
                 <IconButton onClick={handleMenuOpen} sx={iconStyle}>
-                  <Avatar
-                    src={user.imageUser || user.avatar} // Thêm fallback nếu imageUser không tồn tại
-                    alt={user.username}
-                    sx={{ width: 32, height: 32 }}
-                  />
+                  {user.imageUser ? (
+                    <Avatar
+                      src={user.imageUser}
+                      alt={user.username}
+                      sx={{ width: 32, height: 32 }}
+                    />
+                  ) : (
+                    <FaceIcon sx={{ fontSize: 40 }} /> // Sử dụng FaceIcon và điều chỉnh kích thước nếu cần
+                  )}
                 </IconButton>
                 <Menu
                   anchorEl={anchorEl}

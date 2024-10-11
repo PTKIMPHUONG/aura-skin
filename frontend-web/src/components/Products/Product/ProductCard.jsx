@@ -36,25 +36,17 @@ const DiscountBadge = styled(Box)({
 });
 
 const ProductCard = ({ product }) => {
-  const discountPercentage =
-    product.originalPrice && product.price
-      ? Math.round(
-          ((product.originalPrice - product.price) / product.originalPrice) *
-            100
-        )
-      : 0;
-
   return (
     <Link
-      to={`/products/product-detail?id=${product.id}`}
+      to={`/products/product-detail?id=${product.product_id}`}
       style={{ textDecoration: "none" }}
     >
       <StyledCard>
         <Box sx={{ position: "relative" }}>
-          <StyledCardMedia image={product.urlImage} title={product.name} />
-          {discountPercentage > 0 && (
-            <DiscountBadge>-{discountPercentage}%</DiscountBadge>
-          )}
+          <StyledCardMedia
+            image={product.default_image || "đường dẫn ảnh mặc định"}
+            title={product.product_name || "Tên sản phẩm"}
+          />
         </Box>
         <StyledCardContent>
           <Typography
@@ -63,7 +55,7 @@ const ProductCard = ({ product }) => {
             component="div"
             sx={{ fontWeight: 500, fontSize: "20px", textAlign: "center" }}
           >
-            {product.name}
+            {product.product_name || "Tên sản phẩm"}
           </Typography>
           <Box
             display="flex"
@@ -76,25 +68,10 @@ const ProductCard = ({ product }) => {
               color="#000000"
               sx={{ fontSize: "16px", fontWeight: "unset", mr: 1 }}
             >
-              {product.price
-                ? `${product.price.toLocaleString("vi-VN")}đ`
+              {product.default_price
+                ? `${product.default_price.toLocaleString("vi-VN")}đ`
                 : "Giá không có sẵn"}
             </Typography>
-            {product.originalPrice &&
-              product.originalPrice !== product.price && (
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{
-                    fontSize: "13px",
-                    fontWeight: "400",
-                    textDecoration: "line-through",
-                    marginLeft: "12px",
-                  }}
-                >
-                  {product.originalPrice.toLocaleString("vi-VN")}đ
-                </Typography>
-              )}
           </Box>
         </StyledCardContent>
       </StyledCard>

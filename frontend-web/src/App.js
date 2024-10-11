@@ -38,7 +38,7 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/products" element={<ProductListPage />} />
               <Route
-                path="/category/:categoryId"
+                path="/categories/:categoryId/products"
                 element={<CategoryProductListPage />}
               />
               <Route

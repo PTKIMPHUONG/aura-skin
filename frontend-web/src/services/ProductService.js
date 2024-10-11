@@ -1,11 +1,93 @@
-import React from "react";
-import ProductCard from "../components/Products/Product/ProductCard.js";
-import "../styles/ProductList.css";
+import api from "./api";
 
-async function getProducts() {
-  const response = await fetch("/api/products");
-  const data = await response.json();
-  return data;
-}
+const ProductService = {
+  getAllProducts: async () => {
+    try {
+      const response = await api.get("/products");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching all products:", error);
+      throw error;
+    }
+  },
 
-export default getProducts;
+  getProductById: async (id) => {
+    try {
+      const response = await api.get(`/products/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching product with id ${id}:`, error);
+      throw error;
+    }
+  },
+
+  getVariantsByProductId: async (productId) => {
+    try {
+      const response = await api.get(`/products/${productId}/product-variants`);
+      return response.data;
+    } catch (error) {
+      console.error(
+        `Error fetching variants for product id ${productId}:`,
+        error
+      );
+      throw error;
+    }
+  },
+
+  getVariantsByProductName: async (productName) => {
+    try {
+      const response = await api.get(
+        `/products/${productName}/product-variants`
+      );
+      return response.data;
+    } catch (error) {
+      console.error(
+        `Error fetching variants for product name ${productName}:`,
+        error
+      );
+      throw error;
+    }
+  },
+
+  createProduct: async (productData) => {
+    try {
+      const response = await api.post("/products/create", productData);
+      return response.data;
+    } catch (error) {
+      console.error("Error creating product:", error);
+      throw error;
+    }
+  },
+
+  updateProduct: async (id, productData) => {
+    try {
+      const response = await api.put(`/products/update/${id}`, productData);
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating product with id ${id}:`, error);
+      throw error;
+    }
+  },
+
+  deleteProduct: async (id) => {
+    try {
+      const response = await api.delete(`/products/delete/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting product with id ${id}:`, error);
+      throw error;
+    }
+  },
+
+  getProductsByCategory: async (categoryId) => {
+    try {
+      const response = await api.get(`/products?category=${categoryId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching products by category:", error);
+      throw error;
+    }
+  },
+};
+
+export default ProductService;
