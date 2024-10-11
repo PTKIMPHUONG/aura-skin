@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
@@ -256,7 +255,7 @@ func (repo *productVariantRepository) CreateVariant(variant models.ProductVarian
 	variantMap["is_active"] = true
 
 	_, err = tx.Run(ctx,
-		"CREATE (v:ProductVariant {variant_id: $variant_id, variant_name: $variant_name, size: $size, color: $color, price: $price, stock_quantity: $stock_quantity, thumbnail: $thumbnail, is_active: $is_active})",
+		"CREATE (v:ProductVariant {variant_id: $variant_id, variant_name: $variant_name, size: $size, color: $color, price: $price, stock_quantity: $stock_quantity, thumbnail: $thumbnail, is_active: $is_active, description_images: $description_images})",
 		variantMap,
 	)
 	if err != nil {
@@ -311,7 +310,7 @@ func (repo *productVariantRepository) UpdateVariant(id string, variant models.Pr
 	}
 
 	_, err = tx.Run(ctx,
-		"MATCH (v:ProductVariant {variant_id: $variant_id}) SET v.variant_name = $variant_name, v.size = $size, v.color = $color, v.price = $price, v.stock_quantity = $stock_quantity, v.thumbnail = $thumbnail, v.is_active = $is_active RETURN v", // Sửa thành '='
+		"MATCH (v:ProductVariant {variant_id: $variant_id}) SET v.variant_name = $variant_name, v.size = $size, v.color = $color, v.price = $price, v.stock_quantity = $stock_quantity, v.thumbnail = $thumbnail, v.is_active = $is_active, v.description_images: $description_images RETURN v",
 		variantMap,
 	)
 	if err != nil {
@@ -397,7 +396,4 @@ func (repo *productVariantRepository) UploadThumbnailAndSetURL(variantID string,
 	}
 
 	return fileUrl, nil
-}
-func generateUUID() string {
-	return uuid.New().String()
 }

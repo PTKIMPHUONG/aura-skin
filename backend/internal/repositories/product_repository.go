@@ -207,7 +207,8 @@ func (repo *productRepository) CreateProduct(product models.Product, categoryID 
 	if !productExistsResult.Next(ctx) {
 		_, err = tx.Run(ctx,
 			`CREATE (p:Product {product_id: $product_id, product_name: $product_name, description: $description, 
-              default_price: $default_price, capacity: $capacity, ingredients: $ingredients, 
+              default_price: $default_price, capacity: $capacity, ingredients: $ingredients, features: $features,
+			  origin: $origin, manufactured_in: $manufactured_in, usage: $usage,
               default_image: $default_image, expiration_date: $expiration_date, storage: $storage, 
               created_at: $created_at, target_customers: $target_customers, is_active: $is_active})`,
 			productMap,
@@ -284,10 +285,11 @@ func (repo *productRepository) UpdateProduct(id string, product models.Product) 
         `MATCH (p:Product {product_id: $product_id}) 
          SET p.product_name = $product_name, p.description = $description, 
              p.default_price = $default_price, p.capacity = $capacity, 
-             p.ingredients = $ingredients, p.default_image = $default_image, 
+             p.ingredients = $ingredients, p.features = $features,
+			 p.origin = $origin, p.manufactured_in = $manufactured_in, p.usage = $usage, p.default_image = $default_image, 
              p.expiration_date = $expiration_date, p.storage = $storage, 
              p.created_at = $created_at, p.target_customers = $target_customers, 
-             p.is_active = $is_active  // Sửa thành '='
+             p.is_active = $is_active  
          RETURN p`,
         productMap,
     )

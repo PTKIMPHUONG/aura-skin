@@ -4,6 +4,7 @@ import (
 	"auraskin/internal/models"
 	"auraskin/internal/repositories"
 	"errors"
+	"mime/multipart"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -18,6 +19,8 @@ type UserService interface {
 	ChangePassword(userID, oldPassword, newPassword string) error
 	ComparePassword(hashedPassword string, plainPassword string) error
 	GetOrdersByUserID(id string) ([]models.Order, error)
+	UploadProfilePicture(userID string, file multipart.File, fileHeader *multipart.FileHeader) (string, error) // Thêm chức năng upload ảnh đại diện
+
 }
 
 type userService struct {
@@ -25,8 +28,9 @@ type userService struct {
 }
 
 func NewUserService(repo repositories.UserRepository) UserService {
-	return &userService{repo}
+	return &userService{repo: repo}
 }
+
 
 // Register a new user
 func (s *userService) Register(user *models.User) error {
@@ -148,4 +152,7 @@ func (s *userService) ChangePassword(userID, oldPassword, newPassword string) er
 
 func (s *userService) GetOrdersByUserID(id string) ([]models.Order, error) {
 	return s.repo.GetOrdersByUserID(id)
+}
+func (s *userService) UploadProfilePicture(userID string, file multipart.File, fileHeader *multipart.FileHeader) (string, error) {
+	return s.repo.UploadProfilePicture(userID, file, fileHeader)
 }
