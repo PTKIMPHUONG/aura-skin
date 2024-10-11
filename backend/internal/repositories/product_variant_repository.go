@@ -397,3 +397,58 @@ func (repo *productVariantRepository) UploadThumbnailAndSetURL(variantID string,
 
 	return fileUrl, nil
 }
+
+// func (repo *productVariantRepository) UploadThumbnailAndSetURL(variantID string, file multipart.File, fileHeader *multipart.FileHeader) (string, error) {
+// 	ctx := context.Background()
+// 	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
+// 	defer session.Close(ctx)
+
+// 	fileName := fmt.Sprintf("%d_%s", time.Now().Unix(), fileHeader.Filename)
+
+// 	client, err := configs.InitializeFirebaseApp().Storage(ctx)
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	bucket, err := client.Bucket(configs.FirebaseStorageBucketName)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	writer := bucket.Object(fileName).NewWriter(ctx)
+// 	token := generateUUID()
+// 	writer.Metadata = map[string]string{
+// 		"firebaseStorageDownloadTokens": token,
+// 	}
+// 	defer writer.Close()
+
+// 	if _, err := io.Copy(writer, file); err != nil {
+// 		return "", err
+// 	}
+// 	encodedFileName := url.QueryEscape(fileName)
+
+// 	fileUrl := fmt.Sprintf("https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media&token=%s", configs.FirebaseStorageBucketName, encodedFileName, token)
+
+// 	tx, err := session.BeginTransaction(ctx)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	defer tx.Close(ctx)
+
+// 	_, err = tx.Run(ctx,
+// 		"MATCH (v:ProductVariant {variant_id: $variant_id}) SET v.thumbnail = $thumbnail_url RETURN v",
+// 		map[string]interface{}{
+// 			"variant_id":    variantID,
+// 			"thumbnail_url": fileUrl,
+// 		},
+// 	)
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	err = tx.Commit(ctx)
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	return fileUrl, nil
+// }
