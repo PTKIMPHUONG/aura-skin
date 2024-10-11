@@ -83,3 +83,22 @@ func GetInt(data map[string]interface{}, key string) int {
 	}
 	return 0
 }
+
+func GetStringSlice(data map[string]interface{}, key string) []string {
+	if val, ok := data[key]; ok {
+		if strSlice, ok := val.([]string); ok {
+			return strSlice
+		}
+		if interfaceSlice, ok := val.([]interface{}); ok {
+			var result []string
+			for _, v := range interfaceSlice {
+				if str, ok := v.(string); ok {
+					result = append(result, str)
+				}
+			}
+			return result
+		}
+	}
+	return []string{}
+}
+

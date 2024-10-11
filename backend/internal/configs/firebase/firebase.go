@@ -13,7 +13,8 @@ var (
 )
 
 func InitializeFirebaseApp() *firebase.App {
-	opt := option.WithCredentialsFile("./internal/configs/firebase/auraskin-913fa-firebase-adminsdk-gt6i2-5bf6c1bda2.json")
+	opt := option.WithCredentialsFile("./internal/configs/firebase/auraskin-913fa-firebase-adminsdk-gt6i2-27ea236d1d.json")
+	// opt := option.WithCredentialsFile("./internal/configs/firebase/auraskin-913fa-firebase-adminsdk-gt6i2-5bf6c1bda2.json")
 
 	app, err := firebase.NewApp(context.Background(), &firebase.Config{
 		StorageBucket: FirebaseStorageBucketName,

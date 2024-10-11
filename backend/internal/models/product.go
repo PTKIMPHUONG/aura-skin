@@ -49,7 +49,7 @@ func (p *Product) ToMap() map[string]interface{} {
 }
 
 func (p *Product) FromMap(data map[string]interface{}) (*Product, error) {
-	var expirationDate, createdAt string
+	var createdAt string
 
 	// Hàm helper để thử các định dạng thời gian khác nhau
 	tryParseDate := func(value string, formats ...string) (string, error) {
@@ -62,20 +62,20 @@ func (p *Product) FromMap(data map[string]interface{}) (*Product, error) {
 	}
 
 	// Xử lý trường expiration_date
-	if val, ok := data["expiration_date"]; ok {
-		switch v := val.(type) {
-		case string:
-			parsedDate, err := tryParseDate(v, "2006-01-02", time.RFC3339)
-			if err != nil {
-				return nil, errors.New("invalid expiration date format")
-			}
-			expirationDate = parsedDate
-		case dbtype.Date:
-			expirationDate = v.String()
-		default:
-			expirationDate = ""
-		}
-	}
+	// if val, ok := data["expiration_date"]; ok {
+	// 	switch v := val.(type) {
+	// 	case string:
+	// 		parsedDate, err := tryParseDate(v, "2006-01-02", time.RFC3339)
+	// 		if err != nil {
+	// 			return nil, errors.New("invalid expiration date format")
+	// 		}
+	// 		expirationDate = parsedDate
+	// 	case dbtype.Date:
+	// 		expirationDate = v.String()
+	// 	default:
+	// 		expirationDate = ""
+	// 	}
+	// }
 
 	// Xử lý trường created_at
 	if val, ok := data["created_at"]; ok {
@@ -106,7 +106,7 @@ func (p *Product) FromMap(data map[string]interface{}) (*Product, error) {
 		Ingredients:     utils.GetString(data, "ingredients"),
 		DefaultImage:    utils.GetString(data, "default_image"),
 		Storage:         utils.GetString(data, "storage"),
-		ExpirationDate:  expirationDate,
+		ExpirationDate:  utils.GetString(data, "expiration_date"),
 		CreatedAt:       createdAt,
 		TargetCustomers: utils.GetString(data, "target_customers"),
 		IsActive:        utils.GetBool(data, "is_active"),

@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
@@ -256,7 +255,7 @@ func (repo *productVariantRepository) CreateVariant(variant models.ProductVarian
 	variantMap["is_active"] = true
 
 	_, err = tx.Run(ctx,
-		"CREATE (v:ProductVariant {variant_id: $variant_id, variant_name: $variant_name, size: $size, color: $color, price: $price, stock_quantity: $stock_quantity, thumbnail: $thumbnail, is_active: $is_active})",
+		"CREATE (v:ProductVariant {variant_id: $variant_id, variant_name: $variant_name, size: $size, color: $color, price: $price, stock_quantity: $stock_quantity, thumbnail: $thumbnail, is_active: $is_active, description_images: $description_images})",
 		variantMap,
 	)
 	if err != nil {
@@ -311,7 +310,7 @@ func (repo *productVariantRepository) UpdateVariant(id string, variant models.Pr
 	}
 
 	_, err = tx.Run(ctx,
-		"MATCH (v:ProductVariant {variant_id: $variant_id}) SET v.variant_name = $variant_name, v.size = $size, v.color = $color, v.price = $price, v.stock_quantity = $stock_quantity, v.thumbnail = $thumbnail, v.is_active = $is_active RETURN v", // Sửa thành '='
+		"MATCH (v:ProductVariant {variant_id: $variant_id}) SET v.variant_name = $variant_name, v.size = $size, v.color = $color, v.price = $price, v.stock_quantity = $stock_quantity, v.thumbnail = $thumbnail, v.is_active = $is_active, v.description_images: $description_images RETURN v",
 		variantMap,
 	)
 	if err != nil {
@@ -398,6 +397,58 @@ func (repo *productVariantRepository) UploadThumbnailAndSetURL(variantID string,
 
 	return fileUrl, nil
 }
-func generateUUID() string {
-	return uuid.New().String()
-}
+
+// func (repo *productVariantRepository) UploadThumbnailAndSetURL(variantID string, file multipart.File, fileHeader *multipart.FileHeader) (string, error) {
+// 	ctx := context.Background()
+// 	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
+// 	defer session.Close(ctx)
+
+// 	fileName := fmt.Sprintf("%d_%s", time.Now().Unix(), fileHeader.Filename)
+
+// 	client, err := configs.InitializeFirebaseApp().Storage(ctx)
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	bucket, err := client.Bucket(configs.FirebaseStorageBucketName)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	writer := bucket.Object(fileName).NewWriter(ctx)
+// 	token := generateUUID()
+// 	writer.Metadata = map[string]string{
+// 		"firebaseStorageDownloadTokens": token,
+// 	}
+// 	defer writer.Close()
+
+// 	if _, err := io.Copy(writer, file); err != nil {
+// 		return "", err
+// 	}
+// 	encodedFileName := url.QueryEscape(fileName)
+
+// 	fileUrl := fmt.Sprintf("https://firebasestorage.googleapis.com/v0/b/%s/o/%s?alt=media&token=%s", configs.FirebaseStorageBucketName, encodedFileName, token)
+
+// 	tx, err := session.BeginTransaction(ctx)
+// 	if err != nil {
+// 		return "", err
+// 	}
+// 	defer tx.Close(ctx)
+
+// 	_, err = tx.Run(ctx,
+// 		"MATCH (v:ProductVariant {variant_id: $variant_id}) SET v.thumbnail = $thumbnail_url RETURN v",
+// 		map[string]interface{}{
+// 			"variant_id":    variantID,
+// 			"thumbnail_url": fileUrl,
+// 		},
+// 	)
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	err = tx.Commit(ctx)
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	return fileUrl, nil
+// }

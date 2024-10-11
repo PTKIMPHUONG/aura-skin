@@ -5,6 +5,7 @@ import (
 	"auraskin/internal/services"
 	APIResponse "auraskin/pkg/api_response"
 	"net/url"
+
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -50,68 +51,68 @@ func (vc *ProductVariantController) GetVariantByID(c *fiber.Ctx) error {
 }
 
 func (pc *ProductVariantController) GetVariantByName(c *fiber.Ctx) error {
-    name := c.Params("name")
-    decodedName, err := url.QueryUnescape(name)
-    if err != nil {
-        return c.Status(fiber.StatusBadRequest).JSON(APIResponse.ErrorResponse{
-            Status:  fiber.StatusBadRequest,
-            Message: "Invalid variant name format",
-            Error:   err.Error(),
-        })
-    }
+	name := c.Params("name")
+	decodedName, err := url.QueryUnescape(name)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusBadRequest,
+			Message: "Invalid variant name format",
+			Error:   err.Error(),
+		})
+	}
 
-    variant, err := pc.service.GetVariantByName(decodedName)
-    if err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
-            Status:  fiber.StatusInternalServerError,
-            Message: "Unable to fetch variant by name",
-            Error:   err.Error(),
-        })
-    }
+	variant, err := pc.service.GetVariantByName(decodedName)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Unable to fetch variant by name",
+			Error:   err.Error(),
+		})
+	}
 
-    return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
-        Status:  fiber.StatusOK,
-        Data:    variant,
-    })
+	return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+		Status: fiber.StatusOK,
+		Data:   variant,
+	})
 }
 
 func (vc *ProductVariantController) CreateVariant(c *fiber.Ctx) error {
-    // Struct để chứa dữ liệu từ request body
-    var request struct {
-        Variant   models.ProductVariant `json:"variant"`
-        ProductID string                `json:"productID"`
-    }
+	// Struct để chứa dữ liệu từ request body
+	var request struct {
+		Variant   models.ProductVariant `json:"variant"`
+		ProductID string                `json:"productID"`
+	}
 
-    // Parse body để lấy variant và productID
-    if err := c.BodyParser(&request); err != nil {
-        return c.Status(fiber.StatusBadRequest).JSON(APIResponse.ErrorResponse{
-            Status:  fiber.StatusBadRequest,
-            Message: "Cannot parse JSON",
-            Error:   err.Error(),
-        })
-    }
+	// Parse body để lấy variant và productID
+	if err := c.BodyParser(&request); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusBadRequest,
+			Message: "Cannot parse JSON",
+			Error:   err.Error(),
+		})
+	}
 
-    // Kiểm tra ProductID có tồn tại không
-    if request.ProductID == "" {
-        return c.Status(fiber.StatusBadRequest).JSON(APIResponse.ErrorResponse{
-            Status:  fiber.StatusBadRequest,
-            Message: "Product ID is required",
-        })
-    }
+	// Kiểm tra ProductID có tồn tại không
+	if request.ProductID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusBadRequest,
+			Message: "Product ID is required",
+		})
+	}
 
-    // Gọi service để tạo variant kèm productID
-    if err := vc.service.CreateVariant(request.Variant, request.ProductID); err != nil {
-        return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
-            Status:  fiber.StatusInternalServerError,
-            Message: "Unable to create variant",
-            Error:   err.Error(),
-        })
-    }
+	// Gọi service để tạo variant kèm productID
+	if err := vc.service.CreateVariant(request.Variant, request.ProductID); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Unable to create variant",
+			Error:   err.Error(),
+		})
+	}
 
-    return c.Status(fiber.StatusCreated).JSON(APIResponse.SuccessResponse{
-        Status:  fiber.StatusCreated,
-        Message: "Variant created successfully",
-    })
+	return c.Status(fiber.StatusCreated).JSON(APIResponse.SuccessResponse{
+		Status:  fiber.StatusCreated,
+		Message: "Variant created successfully",
+	})
 }
 
 func (vc *ProductVariantController) UpdateVariant(c *fiber.Ctx) error {

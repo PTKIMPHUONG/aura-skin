@@ -10,7 +10,8 @@ import (
 )
 
 func setupUserRoutes(app *fiber.App) {
-	repository := repositories.NewUserRepository(neo4jDB)
+	storageRepository := repositories.NewStorageRepository()
+	repository := repositories.NewUserRepository(neo4jDB, storageRepository)
 	service := services.NewUserService(repository)
 	controller := controllers.NewUserController(service)
 
@@ -21,4 +22,6 @@ func setupUserRoutes(app *fiber.App) {
 	userGroup.Delete("/delete/:id", middlewares.AuthMiddleware(), controller.DeleteUser)
 	userGroup.Put("/update", middlewares.AuthMiddleware(), controller.UpdateUser)
 	userGroup.Get("/:id/order-history", controller.GetOrdersByUserID)
+	userGroup.Post("/upload-profile-picture/:user_id", controller.UploadProfilePicture)
+
 }
