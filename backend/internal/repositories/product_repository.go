@@ -5,7 +5,8 @@ import (
 	"auraskin/internal/models"
 	"context"
 	"errors"
-
+	"fmt"
+	"net/url"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
@@ -91,7 +92,7 @@ func (repo *productRepository) GetVariantsByProductID(productID string) ([]model
 	defer session.Close(ctx)
 
 	result, err := session.Run(ctx, `
-        MATCH (p:Product {product_id: $productID})<-[:BELONGS_TO]-(v:Variant) 
+        MATCH (p:Product {product_id: $productID})<-[:BELONGS_TO]-(v:ProductVariant) 
         RETURN v
     `, map[string]interface{}{
 		"productID": productID,
@@ -106,6 +107,8 @@ func (repo *productRepository) GetVariantsByProductID(productID string) ([]model
 		node, _ := record.Get("v")
 		variantNode := node.(neo4j.Node)
 
+		fmt.Println("Variant Node Props:", variantNode.Props)
+
 		variantMap := variantNode.Props
 		variant, err := (&models.ProductVariant{}).FromMap(variantMap)
 		if err != nil {
@@ -118,6 +121,11 @@ func (repo *productRepository) GetVariantsByProductID(productID string) ([]model
 }
 
 func (repo *productRepository) GetVariantsByProductName(productName string) ([]models.ProductVariant, error) {
+	decodedProductName, err := url.QueryUnescape(productName)
+	if err != nil {
+		return nil, fmt.Errorf("error decoding product name: %v", err)
+	}
+	
 	ctx := context.Background()
 	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
 	defer session.Close(ctx)
@@ -126,7 +134,7 @@ func (repo *productRepository) GetVariantsByProductName(productName string) ([]m
         MATCH (p:Product {product_name: $productName})<-[:BELONGS_TO]-(v:ProductVariant) 
         RETURN v
     `, map[string]interface{}{
-		"productName": productName,
+		"productName": decodedProductName,
 	})
 	if err != nil {
 		return nil, err
@@ -137,6 +145,8 @@ func (repo *productRepository) GetVariantsByProductName(productName string) ([]m
 		record := result.Record()
 		node, _ := record.Get("v")
 		variantNode := node.(neo4j.Node)
+
+		fmt.Println("Variant Node Props:", variantNode.Props)
 
 		variantMap := variantNode.Props
 		variant, err := (&models.ProductVariant{}).FromMap(variantMap)
@@ -254,35 +264,35 @@ func (repo *productRepository) CreateProduct(product models.Product, categoryID 
 }
 
 func (repo *productRepository) UpdateProduct(id string, product models.Product) error {
-    ctx := context.Background()
-    session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
-    defer session.Close(ctx)
+	ctx := context.Background()
+	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
+	defer session.Close(ctx)
 
-    tx, err := session.BeginTransaction(ctx)
-    if err != nil {
-        return err
-    }
-    defer tx.Close(ctx)
+	tx, err := session.BeginTransaction(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Close(ctx)
 
-    productMap := product.ToMap()
+	productMap := product.ToMap()
 
-    // Kiểm tra sản phẩm có tồn tại hay không
-    productExistsResult, err := tx.Run(ctx,
-        "MATCH (p:Product {product_id: $product_id}) RETURN p",
-        map[string]interface{}{
-            "product_id": id,
-        },
-    )
-    if err != nil {
-        return err
-    }
+	// Kiểm tra sản phẩm có tồn tại hay không
+	productExistsResult, err := tx.Run(ctx,
+		"MATCH (p:Product {product_id: $product_id}) RETURN p",
+		map[string]interface{}{
+			"product_id": id,
+		},
+	)
+	if err != nil {
+		return err
+	}
 
-    if !productExistsResult.Next(ctx) {
-        return errors.New("product does not exist")
-    }
+	if !productExistsResult.Next(ctx) {
+		return errors.New("product does not exist")
+	}
 
-    _, err = tx.Run(ctx,
-        `MATCH (p:Product {product_id: $product_id}) 
+	_, err = tx.Run(ctx,
+		`MATCH (p:Product {product_id: $product_id}) 
          SET p.product_name = $product_name, p.description = $description, 
              p.default_price = $default_price, p.capacity = $capacity, 
              p.ingredients = $ingredients, p.features = $features,
@@ -291,13 +301,13 @@ func (repo *productRepository) UpdateProduct(id string, product models.Product) 
              p.created_at = $created_at, p.target_customers = $target_customers, 
              p.is_active = $is_active  
          RETURN p`,
-        productMap,
-    )
-    if err != nil {
-        return err
-    }
+		productMap,
+	)
+	if err != nil {
+		return err
+	}
 
-    return tx.Commit(ctx)
+	return tx.Commit(ctx)
 }
 
 func (repo *productRepository) DeleteProduct(id string) error {

@@ -64,6 +64,7 @@ func (pc *ProductController) GetVariantsByProductID(c *fiber.Ctx) error {
 		Message: "Variants retrieved successfully",
 		Data:    variants,
 	})
+	
 }
 
 func (pc *ProductController) GetVariantsByProductName(c *fiber.Ctx) error {
