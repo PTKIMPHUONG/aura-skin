@@ -3,7 +3,7 @@ import { Box, Container, Typography } from "@mui/material";
 import SidebarUser from "../components/Sidebar/SidebarUser";
 import UserProfileForm from "../components/Users/UserProfileForm";
 import { useAuth } from "../context/Authcontext";
-import mockUsers from "../data/mockUsers";
+import AuthService from "../services/AuthService";
 
 const UserProfilePage = () => {
   const { user } = useAuth();
@@ -11,20 +11,22 @@ const UserProfilePage = () => {
 
   useEffect(() => {
     if (user) {
-      const currentUser = mockUsers.find(
-        (mockUser) => mockUser.email === user.email
-      );
-      if (currentUser) {
-        setProfileData(currentUser);
-      }
+      setProfileData(user);
     }
   }, [user]);
 
-  const handleUpdateProfile = (updatedData) => {
-    // Xử lý cập nhật thông tin người dùng ở đây
-    console.log(updatedData);
-    // Sau khi cập nhật thành công, cập nhật state
-    setProfileData(updatedData);
+  const handleUpdateProfile = async (updatedData) => {
+    try {
+      // Giả sử AuthService có phương thức updateUserProfile
+      const response = await AuthService.updateUserProfile(updatedData);
+      if (response.success) {
+        setProfileData(response.data);
+        // Hiển thị thông báo cập nhật thành công
+      }
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      // Hiển thị thông báo lỗi
+    }
   };
 
   if (!profileData) {

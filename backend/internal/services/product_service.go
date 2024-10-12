@@ -3,7 +3,7 @@ package services
 import (
 	"auraskin/internal/models"
 	"auraskin/internal/repositories"
-	"mime/multipart"
+	// "mime/multipart"
 )
 
 type ProductServiceInterface interface {

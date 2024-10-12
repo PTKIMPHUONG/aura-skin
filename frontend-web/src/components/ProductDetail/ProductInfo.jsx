@@ -10,22 +10,23 @@ import {
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../../context/CartContext";
 
-function ProductInfo({ product }) {
+function ProductInfo({ product, selectedVariant }) {
   const [quantity, setQuantity] = useState(1);
   const { addToCart } = useContext(CartContext);
   const navigate = useNavigate();
 
-  const discountPercentage = Math.round(
-    ((product.originalPrice - product.price) / product.originalPrice) * 100
-  );
+  const price = selectedVariant ? selectedVariant.price : product.default_price;
+  const discountPercentage = 0; // Tính toán giảm giá nếu có
 
   const handleBuyNow = () => {
-    console.log("handleBuyNow called", product, quantity);
-    addToCart({ ...product, quantity });
+    const itemToAdd = selectedVariant
+      ? { ...selectedVariant, product_name: product.product_name }
+      : product;
+    addToCart({ ...itemToAdd, quantity });
     navigate("/order-confirmation", {
       state: {
-        cartItems: [{ ...product, quantity }],
-        totalPrice: product.price * quantity,
+        cartItems: [{ ...itemToAdd, quantity }],
+        totalPrice: price * quantity,
       },
     });
   };
@@ -33,28 +34,20 @@ function ProductInfo({ product }) {
   return (
     <Box sx={{ maxWidth: "90%" }}>
       <Typography variant="h5" fontWeight="bold" gutterBottom>
-        {product.name}
+        {product.product_name}
       </Typography>
       <Box display="flex" alignItems="center" my={1}>
-        <Rating value={product.rating || 0} readOnly size="small" />
+        <Rating value={0} readOnly size="small" />
         <Typography variant="body2" ml={1}>
-          ({product.reviews?.length || 0} đánh giá)
+          (0 đánh giá)
         </Typography>
         <Typography variant="body2" ml={1}>
-          {product.soldCount || 0} đã bán
+          0 đã bán
         </Typography>
       </Box>
       <Box display="flex" alignItems="center" my={1}>
         <Typography variant="h4" color="error" fontWeight="bold">
-          {product.price.toLocaleString("vi-VN")}đ
-        </Typography>
-        <Typography
-          variant="body1"
-          color="text.secondary"
-          sx={{ textDecoration: "line-through" }}
-          ml={2}
-        >
-          {product.originalPrice.toLocaleString("vi-VN")}đ
+          {price.toLocaleString("vi-VN")}đ
         </Typography>
         {discountPercentage > 0 && (
           <Chip

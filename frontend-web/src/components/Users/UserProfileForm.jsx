@@ -11,6 +11,9 @@ import {
   Input,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import authService from "../../services/AuthService";
+
+const defaultAvatar = require("../../assets/images/defaultImageUser.png"); // Thêm đường dẫn đến ảnh mặc định
 
 const UserProfileForm = ({ profileData, onUpdateProfile }) => {
   const [formData, setFormData] = useState(profileData);
@@ -28,15 +31,21 @@ const UserProfileForm = ({ profileData, onUpdateProfile }) => {
     setSelectedFile(event.target.files[0]);
   };
 
-  const handleFileUpload = () => {
+  const handleFileUpload = async () => {
     if (selectedFile) {
-      // Xử lý tải lên file ở đây
-      console.log("Tải lên file:", selectedFile);
-      // Sau khi tải lên thành công, cập nhật URL ảnh mới
-      // setFormData(prevData => ({
-      //   ...prevData,
-      //   imageUser: newImageUrl
-      // }));
+      try {
+        // Giả sử AuthService có phương thức uploadProfilePicture
+        const response = await authService.uploadProfilePicture(selectedFile);
+        if (response.success) {
+          setFormData((prevData) => ({
+            ...prevData,
+            imageUser: response.data.imageUrl,
+          }));
+        }
+      } catch (error) {
+        console.error("Error uploading profile picture:", error);
+        // Hiển thị thông báo lỗi
+      }
     }
   };
 
@@ -53,11 +62,11 @@ const UserProfileForm = ({ profileData, onUpdateProfile }) => {
             margin="normal"
             required
             fullWidth
-            id="fullName"
-            label="Họ tên"
-            name="fullName"
-            autoComplete="name"
-            value={formData.fullName}
+            id="username"
+            label="Tên người dùng"
+            name="username"
+            autoComplete="username"
+            value={formData.username || ""}
             onChange={handleChange}
           />
           <TextField
@@ -68,31 +77,8 @@ const UserProfileForm = ({ profileData, onUpdateProfile }) => {
             label="Email"
             name="email"
             autoComplete="email"
-            value={formData.email}
+            value={formData.email || ""}
             onChange={handleChange}
-          />
-          <RadioGroup
-            row
-            aria-label="gender"
-            name="gender"
-            value={formData.gender}
-            onChange={handleChange}
-          >
-            <FormControlLabel value="Nam" control={<Radio />} label="Nam" />
-            <FormControlLabel value="Nữ" control={<Radio />} label="Nữ" />
-          </RadioGroup>
-          <TextField
-            margin="normal"
-            fullWidth
-            id="birthDate"
-            label="Ngày/tháng/năm sinh"
-            name="birthDate"
-            type="date"
-            value={formData.birthDate}
-            onChange={handleChange}
-            InputLabelProps={{
-              shrink: true,
-            }}
           />
           <TextField
             margin="normal"
@@ -102,7 +88,7 @@ const UserProfileForm = ({ profileData, onUpdateProfile }) => {
             label="Số điện thoại"
             name="phoneNumber"
             autoComplete="tel"
-            value={formData.phoneNumber}
+            value={formData.phoneNumber || ""}
             onChange={handleChange}
           />
           <Button
@@ -125,7 +111,7 @@ const UserProfileForm = ({ profileData, onUpdateProfile }) => {
           }}
         >
           <Avatar
-            src={formData.imageUser}
+            src={formData.imageUser || defaultAvatar}
             sx={{ width: 150, height: 150, mb: 2 }}
           />
           <Input

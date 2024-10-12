@@ -20,25 +20,13 @@ function ProductDetails({ product }) {
             <TableCell component="th" scope="row">
               Tên sản phẩm
             </TableCell>
-            <TableCell>{product.name}</TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell component="th" scope="row">
-              Chất son
-            </TableCell>
-            <TableCell>{product.texture}</TableCell>
+            <TableCell>{product.product_name}</TableCell>
           </TableRow>
           <TableRow>
             <TableCell component="th" scope="row">
               Dung tích
             </TableCell>
-            <TableCell>{product.volume}</TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell component="th" scope="row">
-              Thương hiệu
-            </TableCell>
-            <TableCell>{product.brand}</TableCell>
+            <TableCell>{product.capacity}</TableCell>
           </TableRow>
           <TableRow>
             <TableCell component="th" scope="row">
@@ -50,13 +38,13 @@ function ProductDetails({ product }) {
             <TableCell component="th" scope="row">
               Sản xuất tại
             </TableCell>
-            <TableCell>{product.madeIn}</TableCell>
+            <TableCell>{product.manufactured_in}</TableCell>
           </TableRow>
           <TableRow>
             <TableCell component="th" scope="row">
               Hạn sử dụng
             </TableCell>
-            <TableCell>{product.expirationDate}</TableCell>
+            <TableCell>{product.expiration_date}</TableCell>
           </TableRow>
         </TableBody>
       </Table>

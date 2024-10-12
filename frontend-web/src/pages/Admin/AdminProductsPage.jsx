@@ -89,7 +89,7 @@ const ProductsPage = () => {
     // Xử lý logic xóa sản phẩm
     try {
       await ProductService.deleteProduct(productId);
-      setProducts(products.filter((p) => p.product_id !== productId));
+      setProducts(products.filter((p) => p.id !== productId));
     } catch (error) {
       console.error("Error deleting product:", error);
       // Hiển thị thông báo lỗi cho người dùng
