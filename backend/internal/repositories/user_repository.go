@@ -18,6 +18,9 @@ type UserRepository interface {
 	GetUserByEmail(email string) (*models.User, error)
 	GetOrdersByUserID(id string) ([]models.Order, error)
 	UploadProfilePicture(userID string, file multipart.File, fileHeader *multipart.FileHeader) (string, error)
+	GetAllUsers() ([]models.User, error)
+	GetUserByRole(isAdmin bool) ([]models.User, error)
+	GetProductVariantsByUserID(userID string) ([]models.ProductVariant, error)
 }
 
 type userRepository struct {
@@ -37,7 +40,7 @@ func (repo *userRepository) GetByID(id string) (*models.User, error) {
 	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
 	defer session.Close(ctx)
 
-	result, err := session.Run(ctx, "MATCH (u:User {id: $id, isActive: true}) RETURN u", map[string]interface{}{
+	result, err := session.Run(ctx, "MATCH (u:User {id: $id, is_active: true}) RETURN u", map[string]interface{}{
 		"id": id,
 	})
 	if err != nil {
@@ -53,10 +56,16 @@ func (repo *userRepository) GetByID(id string) (*models.User, error) {
 
 		userNode := node.(neo4j.Node)
 		user := models.User{
-			ID:       userNode.Props["id"].(string),
-			Username: userNode.Props["username"].(string),
-			Email:    userNode.Props["email"].(string),
-			Password: userNode.Props["password"].(string),
+			ID:          userNode.Props["id"].(string),
+			Username:    userNode.Props["username"].(string),
+			Email:       userNode.Props["email"].(string),
+			Password:    userNode.Props["password"].(string),
+			PhoneNumber: userNode.Props["phone_number"].(string),
+			IsActive:    userNode.Props["is_active"].(bool),
+			IsAdmin:     userNode.Props["is_admin"].(bool),
+			Gender:      userNode.Props["gender"].(string),
+			BirthDate:   userNode.Props["birth_date"].(string),
+			User_image:  userNode.Props["user_image"].(string),
 		}
 		return &user, nil
 	}
@@ -80,14 +89,23 @@ func (repo *userRepository) Create(user models.User) error {
 	defer tx.Close(ctx)
 
 	user.ID = uuid.NewString()
+	user.IsActive = true
+	user.User_image = ""
+
+	user.ID = uuid.NewString()
 	_, err = tx.Run(ctx,
-		"CREATE (u:User {id: $id, username: $username, email: $email, password: $password, phone_number: $phone_number})",
+		"CREATE (u:User {id: $id, username: $username, email: $email, password: $password, phone_number: $phone_number, is_active: $is_active, is_admin: $is_admin, gender: $gender, birth_date: $birth_date, user_image: $user_image})",
 		map[string]interface{}{
 			"id":           user.ID,
 			"username":     user.Username,
 			"email":        user.Email,
 			"password":     user.Password,
 			"phone_number": user.PhoneNumber,
+			"is_active":    user.IsActive,
+			"is_admin":     user.IsAdmin,
+			"gender":       user.Gender,
+			"birth_date":   user.BirthDate,
+			"user_image":   user.User_image,
 		},
 	)
 	if err != nil {
@@ -124,8 +142,16 @@ func (repo *userRepository) Update(user models.User) error {
 		params["password"] = user.Password
 	}
 
+	if user.Gender != "" {
+		params["gender"] = user.Gender
+	}
+
+	if user.BirthDate != "" {
+		params["birth_date"] = user.BirthDate
+	}
+
 	result, err := tx.Run(ctx,
-		"MATCH (u:User {id: $id}) SET u.username = $username, u.phone_number = $phone_number, u.password = $password RETURN u",
+		"MATCH (u:User {id: $id}) SET u.username = $username, u.phone_number = $phone_number, u.password = $password, u.gender = $gender, u.birth_date = $birth_date RETURN u",
 		params,
 	)
 	if err != nil {
@@ -151,7 +177,7 @@ func (repo *userRepository) Delete(id string) error {
 	defer tx.Close(ctx)
 
 	result, err := tx.Run(ctx,
-		"MATCH (u:User {id: $id}) SET u.isActive = false RETURN u",
+		"MATCH (u:User {id: $id}) SET u.is_active = false RETURN u",
 		map[string]interface{}{
 			"id": id,
 		},
@@ -197,10 +223,16 @@ func (repo *userRepository) GetUsersByName(name string) ([]models.User, error) {
 
 		userNode := node.(neo4j.Node)
 		user := models.User{
-			ID:       userNode.Props["id"].(string),
-			Username: userNode.Props["username"].(string),
-			Email:    userNode.Props["email"].(string),
-			Password: userNode.Props["password"].(string),
+			ID:          userNode.Props["id"].(string),
+			Username:    userNode.Props["username"].(string),
+			Email:       userNode.Props["email"].(string),
+			Password:    userNode.Props["password"].(string),
+			PhoneNumber: userNode.Props["phone_number"].(string),
+			IsActive:    userNode.Props["is_active"].(bool),
+			IsAdmin:     userNode.Props["is_admin"].(bool),
+			Gender:      userNode.Props["gender"].(string),
+			BirthDate:   userNode.Props["birth_date"].(string),
+			User_image:  userNode.Props["user_image"].(string),
 		}
 		users = append(users, user)
 	}
@@ -235,35 +267,17 @@ func (repo *userRepository) GetUserByEmail(email string) (*models.User, error) {
 		}
 
 		userNode := node.(neo4j.Node)
-		user := models.User{}
-		if id, ok := userNode.Props["id"].(string); ok {
-			user.ID = id
-		} else {
-			return nil, errors.New("invalid id")
-		}
-
-		if username, ok := userNode.Props["username"].(string); ok {
-			user.Username = username
-		} else {
-			return nil, errors.New("invalid username")
-		}
-
-		if email, ok := userNode.Props["email"].(string); ok {
-			user.Email = email
-		} else {
-			return nil, errors.New("invalid email")
-		}
-
-		if phoneNumber, ok := userNode.Props["phone_number"].(string); ok {
-			user.PhoneNumber = phoneNumber
-		} else {
-			return nil, errors.New("invalid phone number")
-		}
-
-		if password, ok := userNode.Props["password"].(string); ok {
-			user.Password = password
-		} else {
-			return nil, errors.New("invalid password")
+		user := models.User{
+			ID:          userNode.Props["id"].(string),
+			Username:    userNode.Props["username"].(string),
+			Email:       userNode.Props["email"].(string),
+			Password:    userNode.Props["password"].(string),
+			PhoneNumber: userNode.Props["phone_number"].(string),
+			IsActive:    userNode.Props["is_active"].(bool),
+			IsAdmin:     userNode.Props["is_admin"].(bool),
+			Gender:      userNode.Props["gender"].(string),
+			BirthDate:   userNode.Props["birth_date"].(string),
+			User_image:  userNode.Props["user_image"].(string),
 		}
 
 		return &user, nil
@@ -271,6 +285,7 @@ func (repo *userRepository) GetUserByEmail(email string) (*models.User, error) {
 
 	return nil, errors.New("user with email " + email + " not found")
 }
+
 
 func (repo *userRepository) GetOrdersByUserID(id string) ([]models.Order, error) {
 	ctx := context.Background()
@@ -343,4 +358,154 @@ func (repo *userRepository) UploadProfilePicture(userID string, file multipart.F
 	}
 	fmt.Println("Successfully updated profile picture in Neo4j with URL:", profilePictureUrl)
 	return profilePictureUrl, nil
+}
+
+func (repo *userRepository) GetAllUsers() ([]models.User, error) {
+	ctx := context.Background()
+	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
+	defer session.Close(ctx)
+
+	query := "MATCH (u:User {is_active: true}) RETURN u"
+	result, err := session.Run(ctx, query, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return mapUsers(result, ctx)
+}
+
+func mapUsers(result neo4j.ResultWithContext, ctx context.Context) ([]models.User, error) {
+	var users []models.User
+
+	for result.Next(ctx) {
+		record := result.Record()
+		node, found := record.Get("u")
+		if !found {
+			continue
+		}
+
+		userNode := node.(neo4j.Node)
+		user := models.User{
+			ID:          getStringProp(userNode.Props, "id"),
+			Username:    getStringProp(userNode.Props, "username"),
+			Email:       getStringProp(userNode.Props, "email"),
+			Password:    getStringProp(userNode.Props, "password"),
+			PhoneNumber: getStringProp(userNode.Props, "phone_number"),
+			User_image:  getStringProp(userNode.Props, "user_image"),
+			IsAdmin:     getBoolProp(userNode.Props, "is_admin"),
+			IsActive:    getBoolProp(userNode.Props, "is_active"),
+			Gender:      getStringProp(userNode.Props, "gender"),
+			BirthDate:   getStringProp(userNode.Props, "birth_date"),
+		}
+		users = append(users, user)
+	}
+
+	fmt.Println("Mapped users:", users)
+
+	if len(users) == 0 {
+		return nil, errors.New("no users found")
+	}
+
+	return users, nil
+}
+
+// Helper functions for property extraction
+func getStringProp(props map[string]interface{}, key string) string {
+	if val, ok := props[key]; ok {
+		if strVal, ok := val.(string); ok {
+			return strVal
+		}
+	}
+	return ""
+}
+
+func getBoolProp(props map[string]interface{}, key string) bool {
+	if val, ok := props[key]; ok {
+		if boolVal, ok := val.(bool); ok {
+			return boolVal
+		}
+	}
+	return false
+}
+
+func (repo *userRepository) GetUserByRole(isAdmin bool) ([]models.User, error) {
+	ctx := context.Background()
+	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
+	defer session.Close(ctx)
+
+	result, err := session.Run(ctx, "MATCH (u:User {is_admin: $isAdmin, is_active: true}) RETURN u", map[string]interface{}{
+		"isAdmin": isAdmin,
+	})
+	if err != nil {
+		fmt.Println("Error mapping users:", err)
+		return nil, err
+	}
+
+	var users []models.User
+	for result.Next(ctx) {
+		record := result.Record()
+		node, found := record.Get("u")
+		if !found {
+			continue
+		}
+
+		userNode := node.(neo4j.Node)
+		user := models.User{
+			ID:          userNode.Props["id"].(string),
+			Username:    userNode.Props["username"].(string),
+			Email:       userNode.Props["email"].(string),
+			Password:    userNode.Props["password"].(string),
+			PhoneNumber: userNode.Props["phone_number"].(string),
+			User_image:  userNode.Props["user_image"].(string),
+			IsAdmin:     userNode.Props["is_admin"].(bool),
+			IsActive:    userNode.Props["is_active"].(bool),
+			Gender:      userNode.Props["gender"].(string),
+			BirthDate:   userNode.Props["birth_date"].(string),
+		}
+		users = append(users, user)
+	}
+
+	if len(users) == 0 {
+		return nil, errors.New("no users found")
+	}
+
+	return users, nil
+}
+
+//Get product variant by userID
+func (repo *userRepository) GetProductVariantsByUserID(userID string) ([]models.ProductVariant, error) {
+    ctx := context.Background()
+    session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
+    defer session.Close(ctx)
+
+    query := `
+        MATCH (u:User {id: $userID})-[:PLACED_ORDER]->(o:Order)-[:CONTAINS]->(pv:ProductVariant)
+        RETURN pv
+    `
+    result, err := session.Run(ctx, query, map[string]interface{}{
+        "userID": userID,
+    })
+    if err != nil {
+        return nil, err
+    }
+
+    var productVariants []models.ProductVariant
+    for result.Next(ctx) {
+        record := result.Record()
+        node, _ := record.Get("pv")
+        productVariantNode := node.(neo4j.Node)
+        productVariantMap := productVariantNode.Props
+
+        productVariant, err := (&models.ProductVariant{}).FromMap(productVariantMap)
+        if err != nil {
+            return nil, err
+        }
+        productVariants = append(productVariants, *productVariant)
+    }
+
+    if len(productVariants) == 0 {
+        return nil, errors.New("no product variants found for the specified user")
+    }
+
+    return productVariants, nil
 }

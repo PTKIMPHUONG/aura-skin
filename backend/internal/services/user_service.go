@@ -20,7 +20,12 @@ type UserService interface {
 	ComparePassword(hashedPassword string, plainPassword string) error
 	GetOrdersByUserID(id string) ([]models.Order, error)
 	UploadProfilePicture(userID string, file multipart.File, fileHeader *multipart.FileHeader) (string, error) // Thêm chức năng upload ảnh đại diện
-
+	GetByID(id string) (*models.User, error)
+	GetUsersByName(name string) ([]models.User, error)
+	GetUserByEmail(email string) (*models.User, error)
+	GetAllUsers() ([]models.User, error)
+	GetUserByRole(isAdmin bool) ([]models.User, error)
+	GetProductVariantsByUserID(userID string) ([]models.ProductVariant, error)
 }
 
 type userService struct {
@@ -155,4 +160,28 @@ func (s *userService) GetOrdersByUserID(id string) ([]models.Order, error) {
 }
 func (s *userService) UploadProfilePicture(userID string, file multipart.File, fileHeader *multipart.FileHeader) (string, error) {
 	return s.repo.UploadProfilePicture(userID, file, fileHeader)
+}
+
+func (us *userService) GetByID(id string) (*models.User, error) {
+	return us.repo.GetByID(id)
+}
+
+func (s *userService) GetUsersByName(name string) ([]models.User, error) {
+	return s.repo.GetUsersByName(name)
+}
+
+func (us *userService) GetUserByEmail(email string) (*models.User, error) {
+	return us.repo.GetUserByEmail(email)
+}
+
+func (s *userService) GetAllUsers() ([]models.User, error) {
+	return s.repo.GetAllUsers()
+}
+
+func (s *userService) GetUserByRole(isAdmin bool) ([]models.User, error) {
+	return s.repo.GetUserByRole(isAdmin)
+}
+
+func (s *userService) GetProductVariantsByUserID(userID string) ([]models.ProductVariant, error) {
+    return s.repo.GetProductVariantsByUserID(userID)
 }

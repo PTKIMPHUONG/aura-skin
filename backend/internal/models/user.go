@@ -8,7 +8,9 @@ type User struct {
 	PhoneNumber       string            `bson:"phone_number" json:"phone_number" form:"phone_number"`
 	User_image        string            `bson:"user_image" json:"user_image" form:"user_image"`
 	IsAdmin           bool              `bson:"is_admin" json:"is_admin" form:"is_admin"`
-	DeliveryAddresses []DeliveryAddress `bson:"delivery_addresses" json:"delivery_addresses" form:"delivery_addresses"`
+	IsActive          bool              `bson:"is_active" json:"is_active" form:"is_active"`
+	Gender            string            `bson:"gender" json:"gender" form:"gender"`       
+	BirthDate         string            `bson:"birth_date" json:"birth_date" form:"birth_date"` 
 }
 
 type LoginRequest struct {
