@@ -12,6 +12,9 @@ const ProductService = {
   },
 
   getProductById: async (id) => {
+    if (!id) {
+      throw new Error("Product ID is undefined");
+    }
     try {
       const response = await api.get(`/products/${id}`);
       return response.data;
@@ -24,7 +27,7 @@ const ProductService = {
   getVariantsByProductId: async (productId) => {
     try {
       const response = await api.get(`/products/${productId}/product-variants`);
-      return response.data;
+      return response.data.data; // Trả về mảng variants từ thuộc tính data
     } catch (error) {
       console.error(
         `Error fetching variants for product id ${productId}:`,
@@ -81,7 +84,7 @@ const ProductService = {
 
   getProductsByCategory: async (categoryId) => {
     try {
-      const response = await api.get(`/products?category=${categoryId}`);
+      const response = await api.get(`/categories/${categoryId}/products`);
       return response.data;
     } catch (error) {
       console.error("Error fetching products by category:", error);

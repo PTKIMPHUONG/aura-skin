@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { Container, Grid, Box, CircularProgress, Button } from "@mui/material";
+import { useParams, useLocation } from "react-router-dom";
+import { Container, Grid, Box, CircularProgress } from "@mui/material";
 import ProductImageGallery from "../components/ProductDetail/ProductImageGallery";
 import ProductInfo from "../components/ProductDetail/ProductInfo";
 import ProductDetails from "../components/ProductDetail/ProductDetails";
@@ -15,25 +15,31 @@ import ProductService from "../services/ProductService";
 function ProductDetailPage() {
   const [product, setProduct] = useState(null);
   const [variants, setVariants] = useState([]);
-  const [selectedVariant, setSelectedVariant] = useState(null);
+  const [selectedVariantImage, setSelectedVariantImage] = useState(null);
   const { id } = useParams();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const productId = id || searchParams.get("id");
 
   useEffect(() => {
     const fetchProductData = async () => {
+      if (!productId) {
+        console.error("Product ID is undefined");
+        return;
+      }
       try {
-        const productData = await ProductService.getProductById(id);
-        setProduct(productData);
-        const variantsData = await ProductService.getVariantsByProductId(id);
-        setVariants(variantsData);
-        if (variantsData.length > 0) {
-          setSelectedVariant(variantsData[0]);
-        }
+        const response = await ProductService.getProductById(productId);
+        setProduct(response.data);
+        const variantsData = await ProductService.getVariantsByProductId(
+          productId
+        );
+        setVariants(Array.isArray(variantsData) ? variantsData : []);
       } catch (error) {
         console.error("Error fetching product data:", error);
       }
     };
     fetchProductData();
-  }, [id]);
+  }, [productId]);
 
   if (!product) {
     return (
@@ -48,6 +54,8 @@ function ProductDetailPage() {
     );
   }
 
+  const allImages = [product.default_image, ...variants.map((v) => v.image)];
+
   return (
     <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
       <BreadcrumbNavigation product={product} />
@@ -55,34 +63,18 @@ function ProductDetailPage() {
         <Grid item xs={12} md={6}>
           <Box sx={{ pr: { md: 2 } }}>
             <ProductImageGallery
-              images={
-                selectedVariant
-                  ? selectedVariant.description_images
-                  : [product.default_image]
-              }
+              images={allImages}
+              selectedVariantImage={selectedVariantImage}
             />
           </Box>
         </Grid>
         <Grid item xs={12} md={6}>
           <Box sx={{ pl: { md: 2 } }}>
-            <ProductInfo product={product} selectedVariant={selectedVariant} />
-            <Box mt={2}>
-              {variants.map((variant) => (
-                <Button
-                  key={variant.variant_id}
-                  variant={
-                    selectedVariant &&
-                    selectedVariant.variant_id === variant.variant_id
-                      ? "contained"
-                      : "outlined"
-                  }
-                  onClick={() => setSelectedVariant(variant)}
-                  sx={{ mr: 1, mb: 1 }}
-                >
-                  {variant.variant_name}
-                </Button>
-              ))}
-            </Box>
+            <ProductInfo
+              product={product}
+              variants={variants}
+              onVariantSelect={(image) => setSelectedVariantImage(image)}
+            />
           </Box>
         </Grid>
       </Grid>

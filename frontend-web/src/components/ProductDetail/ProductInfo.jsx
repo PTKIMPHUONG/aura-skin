@@ -4,35 +4,47 @@ import {
   Rating,
   Button,
   Box,
-  Chip,
   TextField,
+  useTheme,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../../context/CartContext";
 
-function ProductInfo({ product, selectedVariant }) {
+function ProductInfo({ product, variants, onVariantSelect }) {
   const [quantity, setQuantity] = useState(1);
+  const [selectedVariant, setSelectedVariant] = useState(variants[0]);
   const { addToCart } = useContext(CartContext);
   const navigate = useNavigate();
+  const theme = useTheme();
 
-  const price = selectedVariant ? selectedVariant.price : product.default_price;
-  const discountPercentage = 0; // Tính toán giảm giá nếu có
+  if (!product) {
+    return <Typography>Đang tải thông tin sản phẩm...</Typography>;
+  }
+
+  const price = selectedVariant?.price || product.default_price;
 
   const handleBuyNow = () => {
     const itemToAdd = selectedVariant
       ? { ...selectedVariant, product_name: product.product_name }
       : product;
     addToCart({ ...itemToAdd, quantity });
-    navigate("/order-confirmation", {
-      state: {
-        cartItems: [{ ...itemToAdd, quantity }],
-        totalPrice: price * quantity,
-      },
-    });
+    navigate("/order-confirmation");
+  };
+
+  const handleAddToCart = () => {
+    const itemToAdd = selectedVariant
+      ? { ...selectedVariant, product_name: product.product_name }
+      : product;
+    addToCart({ ...itemToAdd, quantity });
+  };
+
+  const handleVariantSelect = (variant) => {
+    setSelectedVariant(variant);
+    onVariantSelect(variant.image);
   };
 
   return (
-    <Box sx={{ maxWidth: "90%" }}>
+    <Box sx={{ maxWidth: "100%" }}>
       <Typography variant="h5" fontWeight="bold" gutterBottom>
         {product.product_name}
       </Typography>
@@ -45,19 +57,50 @@ function ProductInfo({ product, selectedVariant }) {
           0 đã bán
         </Typography>
       </Box>
-      <Box display="flex" alignItems="center" my={1}>
-        <Typography variant="h4" color="error" fontWeight="bold">
-          {price.toLocaleString("vi-VN")}đ
-        </Typography>
-        {discountPercentage > 0 && (
-          <Chip
-            label={`-${discountPercentage}%`}
-            color="success"
-            size="small"
-            sx={{ ml: 2 }}
-          />
-        )}
+      <Typography variant="h4" color="error" fontWeight="bold" my={2}>
+        {price}đ
+      </Typography>
+
+      <Box my={2}>
+        {variants.map((variant) => (
+          <Button
+            key={variant.variant_id}
+            variant={selectedVariant === variant ? "contained" : "outlined"}
+            fullWidth
+            onClick={() => handleVariantSelect(variant)}
+            sx={{
+              mb: 1,
+              justifyContent: "center",
+              textAlign: "center",
+              height: "auto",
+              padding: "10px",
+              whiteSpace: "normal",
+              backgroundColor:
+                selectedVariant === variant
+                  ? theme.palette.primary.main
+                  : "transparent",
+              color:
+                selectedVariant === variant
+                  ? "white"
+                  : theme.palette.primary.main,
+              border: `1px solid ${theme.palette.primary.main}`,
+              borderRadius: "4px",
+              "&:hover": {
+                backgroundColor:
+                  selectedVariant === variant ? "#9F6DA8" : "#EFEFEF",
+                color:
+                  selectedVariant === variant
+                    ? "white"
+                    : theme.palette.primary.main,
+              },
+              transition: "background-color 0.3s, color 0.3s",
+            }}
+          >
+            {variant.variant_name}
+          </Button>
+        ))}
       </Box>
+
       <Box display="flex" alignItems="center" my={2}>
         <Typography variant="body1" mr={2}>
           Số lượng:
@@ -76,15 +119,34 @@ function ProductInfo({ product, selectedVariant }) {
       <Box mt={4}>
         <Button
           variant="contained"
-          color="primary"
           fullWidth
-          sx={{ height: "50px", mb: 2 }}
+          sx={{
+            height: "50px",
+            mb: 2,
+            backgroundColor: theme.palette.primary.main,
+            "&:hover": {
+              backgroundColor: theme.palette.primary.dark,
+            },
+          }}
           onClick={handleBuyNow}
         >
-          Mua Online
+          MUA NGAY ONLINE
         </Button>
-        <Button variant="outlined" fullWidth sx={{ height: "50px" }}>
-          Thêm vào giỏ hàng
+        <Button
+          variant="outlined"
+          fullWidth
+          sx={{
+            height: "50px",
+            color: theme.palette.primary.main,
+            borderColor: theme.palette.primary.main,
+            "&:hover": {
+              borderColor: theme.palette.primary.dark,
+              color: theme.palette.primary.dark,
+            },
+          }}
+          onClick={handleAddToCart}
+        >
+          THÊM VÀO GIỎ
         </Button>
       </Box>
     </Box>

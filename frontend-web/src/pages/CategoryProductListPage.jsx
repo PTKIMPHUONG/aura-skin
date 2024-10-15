@@ -20,42 +20,28 @@ const CategoryProductListPage = () => {
         setLoading(true);
         setError(null);
         if (categoryId) {
-          const categoryResponse = await CategoryService.getCategoryById(
-            categoryId
-          );
-          setCategory(categoryResponse.data);
-
-          const productsResponse = await ProductService.getProductsByCategory(
-            categoryId
-          );
+          const [categoryResponse, productsResponse] = await Promise.all([
+            CategoryService.getCategoryById(categoryId),
+            ProductService.getProductsByCategory(categoryId),
+          ]);
+          setCategory(categoryResponse);
           setProducts(productsResponse.data);
         } else {
-          const productsResponse = await ProductService.getAllProducts();
-          setProducts(productsResponse.data);
+          // Xử lý trường hợp không có categoryId nếu cần
         }
         setLoading(false);
       } catch (error) {
         setError("Có lỗi xảy ra khi tải dữ liệu");
         setLoading(false);
         console.error("Error fetching data:", error);
-        // Xử lý lỗi ở đây, ví dụ: hiển thị thông báo lỗi
       }
     };
 
     fetchData();
   }, [categoryId]);
 
-  const handlePageChange = async (event, value) => {
+  const handlePageChange = (event, value) => {
     setCurrentPage(value);
-    try {
-      const response = await ProductService.getProductsByCategory(
-        categoryId,
-        value
-      );
-      setProducts(response.data);
-    } catch (error) {
-      console.error("Error fetching products for page:", error);
-    }
   };
 
   if (loading) return <Typography>Đang tải...</Typography>;
@@ -64,21 +50,15 @@ const CategoryProductListPage = () => {
   return (
     <Container maxWidth="lg">
       <Typography variant="h4" component="h1" gutterBottom>
-        Sản phẩm
+        {category ? `Sản phẩm: ${category.category_name}` : "Tất cả sản phẩm"}
       </Typography>
       <Grid container spacing={3}>
         <Grid item xs={12} md={3}>
-          <Sidebar category_id={category ? category.category_id : null} />
+          <Sidebar
+            categoryName={category ? category.category_name : "Tất cả sản phẩm"}
+          />
         </Grid>
         <Grid item xs={12} md={9}>
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            mb={4}
-          >
-            {/* Thêm các tùy chọn sắp xếp nếu cần */}
-          </Box>
           <ProductList
             products={products}
             currentPage={currentPage}

@@ -1,12 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Box, IconButton } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 
-function ProductImageGallery({ images }) {
+function ProductImageGallery({ images, selectedVariantImage }) {
   const [mainImage, setMainImage] = useState(images[0]);
   const [startIndex, setStartIndex] = useState(0);
   const visibleImages = 4; // Số lượng hình ảnh hiển thị cùng lúc
+
+  useEffect(() => {
+    if (selectedVariantImage) {
+      setMainImage(selectedVariantImage);
+    }
+  }, [selectedVariantImage]);
 
   if (!images || images.length === 0) {
     return null;
@@ -29,7 +35,7 @@ function ProductImageGallery({ images }) {
         <img
           src={mainImage}
           alt="Main product"
-          style={{ width: "80%", height: "auto", objectFit: "contain" }}
+          style={{ width: "100%", height: "auto", objectFit: "contain" }}
         />
       </Box>
       <Box sx={{ position: "relative", display: "flex", alignItems: "center" }}>

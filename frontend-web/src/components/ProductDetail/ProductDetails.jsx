@@ -9,6 +9,10 @@ import {
 } from "@mui/material";
 
 function ProductDetails({ product }) {
+  if (!product) {
+    return <Typography>Đang tải thông tin sản phẩm...</Typography>;
+  }
+
   return (
     <Box>
       <Typography variant="h6" fontWeight="bold" mb={2}>
@@ -46,11 +50,40 @@ function ProductDetails({ product }) {
             </TableCell>
             <TableCell>{product.expiration_date}</TableCell>
           </TableRow>
+          <TableRow>
+            <TableCell component="th" scope="row">
+              Thành phần
+            </TableCell>
+            <TableCell>{product.ingredients}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell component="th" scope="row">
+              Cách sử dụng
+            </TableCell>
+            <TableCell>{product.usage}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell component="th" scope="row">
+              Bảo quản
+            </TableCell>
+            <TableCell>{product.storage}</TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell component="th" scope="row">
+              Đối tượng sử dụng
+            </TableCell>
+            <TableCell>{product.target_customers}</TableCell>
+          </TableRow>
         </TableBody>
       </Table>
-      <Typography variant="body1" mt={2}>
-        {product.description}
+      <Typography variant="h6" fontWeight="bold" mt={4} mb={2}>
+        Mô tả sản phẩm
       </Typography>
+      <Typography variant="body1">{product.description}</Typography>
+      <Typography variant="h6" fontWeight="bold" mt={4} mb={2}>
+        Đặc tính nổi bật
+      </Typography>
+      <Typography variant="body1">{product.features}</Typography>
     </Box>
   );
 }

@@ -10,6 +10,15 @@ const CategoryService = {
       throw error;
     }
   },
+  getCategoryById: async (categoryId) => {
+    try {
+      const response = await api.get(`/categories/${categoryId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching category by ID:", error);
+      throw error;
+    }
+  },
 };
 
 export default CategoryService;

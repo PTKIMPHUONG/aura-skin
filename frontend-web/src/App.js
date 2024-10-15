@@ -42,7 +42,7 @@ function App() {
                 element={<CategoryProductListPage />}
               />
               <Route
-                path="/products/product-detail"
+                path="/products/product-detail/:id"
                 element={<ProductDetailPage />}
               />
               <Route element={<ProtectedRoute />}>

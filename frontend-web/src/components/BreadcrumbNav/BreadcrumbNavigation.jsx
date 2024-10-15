@@ -14,7 +14,7 @@ function BreadcrumbNavigation({ product }) {
       <Link component={RouterLink} to="/products" color="inherit">
         Sản phẩm
       </Link>
-      <Typography color="text.primary">{product.name}</Typography>
+      <Typography color="text.primary">{product.product_name}</Typography>
     </Breadcrumbs>
   );
 }

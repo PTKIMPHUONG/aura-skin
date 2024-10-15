@@ -38,7 +38,7 @@ const DiscountBadge = styled(Box)({
 const ProductCard = ({ product }) => {
   return (
     <Link
-      to={`/products/product-detail?id=${product.product_id}`}
+      to={`/products/product-detail/${product.product_id}`}
       style={{ textDecoration: "none" }}
     >
       <StyledCard>
