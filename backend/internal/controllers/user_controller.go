@@ -143,7 +143,7 @@ func (uc *UserController) UpdateUser(c *fiber.Ctx) error {
         })
     }
 
-	userID, ok := c.Locals("userID").(string)
+    userID, ok := c.Locals("userID").(string)
     if !ok || userID == "" {
         return c.Status(fiber.StatusUnauthorized).JSON(APIResponse.ErrorResponse{
             Status:  fiber.StatusUnauthorized,
@@ -151,8 +151,8 @@ func (uc *UserController) UpdateUser(c *fiber.Ctx) error {
             Error:   "StatusUnauthorized",
         })
     }
-	
-	updatedData.ID = userID
+
+    updatedData.ID = userID
     err := uc.service.Update(&updatedData)
     if err != nil {
         if err.Error() == "user not found" {
@@ -160,12 +160,6 @@ func (uc *UserController) UpdateUser(c *fiber.Ctx) error {
                 Status:  fiber.StatusNotFound,
                 Message: "User not found",
                 Error:   "StatusNotFound",
-            })
-        } else if err.Error() == "you do not have permission to update this user" {
-            return c.Status(fiber.StatusForbidden).JSON(APIResponse.ErrorResponse{
-                Status:  fiber.StatusForbidden,
-                Message: "You do not have permission to update this user",
-                Error:   "StatusForbidden",
             })
         }
         return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
@@ -235,4 +229,144 @@ func (uc *UserController) UploadProfilePicture(c *fiber.Ctx) error {
 		Message: "Profile picture uploaded successfully",
 		Data:    fiber.Map{"profile_picture_url": profilePictureURL},
 	})
+}
+
+func (uc *UserController) GetByID(c *fiber.Ctx) error {
+	userID := c.Params("id")
+	user, err := uc.service.GetByID(userID)
+	if err != nil {
+		if err.Error() == "user not found" {
+			return c.Status(fiber.StatusNotFound).JSON(APIResponse.ErrorResponse{
+				Status:  fiber.StatusNotFound,
+				Message: "User not found",
+				Error:   "StatusNotFound",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Internal Server Error",
+			Error:   "StatusInternalServerError",
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+		Status:  fiber.StatusOK,
+		Message: "User retrieved successfully",
+		Data:    user,
+	})
+}
+
+func (uc *UserController) GetUsersByName(c *fiber.Ctx) error {
+	name := c.Query("username")
+	users, err := uc.service.GetUsersByName(name)
+	if err != nil {
+		if err.Error() == "no users found with the name " + name {
+			return c.Status(fiber.StatusNotFound).JSON(APIResponse.ErrorResponse{
+				Status:  fiber.StatusNotFound,
+				Message: "No users found with the given name",
+				Error:   "StatusNotFound",
+			})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Internal Server Error",
+			Error:   "StatusInternalServerError",
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+		Status:  fiber.StatusOK,
+		Message: "Users retrieved successfully",
+		Data:    users,
+	})
+}
+
+func (uc *UserController) GetUserByEmail(c *fiber.Ctx) error {
+    email := c.Query("email")  
+    if email == "" {
+        return c.Status(fiber.StatusBadRequest).JSON(APIResponse.ErrorResponse{
+            Status:  fiber.StatusBadRequest,
+            Message: "Email query parameter is required",
+            Error:   "StatusBadRequest",
+        })
+    }
+
+    user, err := uc.service.GetUserByEmail(email)
+    if err != nil {
+        if err.Error() == "user with email " + email + " not found" {
+            return c.Status(fiber.StatusNotFound).JSON(APIResponse.ErrorResponse{
+                Status:  fiber.StatusNotFound,
+                Message: "User not found",
+                Error:   "StatusNotFound",
+            })
+        }
+        return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+            Status:  fiber.StatusInternalServerError,
+            Message: "Internal Server Error",
+            Error:   "StatusInternalServerError",
+        })
+    }
+
+    return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+        Status:  fiber.StatusOK,
+        Message: "User retrieved successfully",
+        Data:    user,
+    })
+}
+
+func (uc *UserController) GetAllUsers(c *fiber.Ctx) error {
+	users, err := uc.service.GetAllUsers()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Internal Server Error",
+			Error:   "StatusInternalServerError",
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+		Status:  fiber.StatusOK,
+		Message: "Users retrieved successfully",
+		Data:    users,
+	})
+}
+
+func (uc *UserController) GetUserByRole(c *fiber.Ctx) error {
+	isAdmin := c.Query("is_admin") 
+	var adminFlag bool
+	if isAdmin == "true" {
+		adminFlag = true
+	} else if isAdmin == "false" {
+		adminFlag = false
+	}
+
+	users, err := uc.service.GetUserByRole(adminFlag)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Internal Server Error",
+			Error:   "StatusInternalServerError",
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+		Status:  fiber.StatusOK,
+		Message: "Users by role retrieved successfully",
+		Data:    users,
+	})
+}
+
+func (uc *UserController) GetProductVariantsByUserID(c *fiber.Ctx) error {
+    userID := c.Params("id")
+
+    productVariants, err := uc.service.GetProductVariantsByUserID(userID)
+    if err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+            Status:  fiber.StatusInternalServerError,
+            Message: "Internal Server Error",
+            Error:   "StatusInternalServerError",
+        })
+    }
+
+    return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+        Status:  fiber.StatusOK,
+        Message: "Product variants retrieved successfully",
+        Data:    productVariants,
+    })
 }
