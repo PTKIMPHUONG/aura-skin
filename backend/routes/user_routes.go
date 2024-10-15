@@ -23,5 +23,10 @@ func setupUserRoutes(app *fiber.App) {
 	userGroup.Put("/update", middlewares.AuthMiddleware(), controller.UpdateUser)
 	userGroup.Get("/:id/order-history", controller.GetOrdersByUserID)
 	userGroup.Post("/upload-profile-picture/:user_id", controller.UploadProfilePicture)
-
+	userGroup.Get("/:id", controller.GetByID)
+	userGroup.Get("/users/username", controller.GetUsersByName)
+	userGroup.Get("/search/email", controller.GetUserByEmail)
+	userGroup.Get("/", controller.GetAllUsers) 
+	userGroup.Get("/users/admin", controller.GetUserByRole)   
+	userGroup.Get("/:id/product-variants", controller.GetProductVariantsByUserID)
 }
