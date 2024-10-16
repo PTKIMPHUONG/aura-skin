@@ -13,7 +13,7 @@ import ProductList from "../../components/Admin/AdminProducts/ProductList";
 import ProductService from "../../services/ProductService";
 
 const ProductsPage = () => {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState([]); // Khởi tạo là mảng rỗng
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -25,7 +25,14 @@ const ProductsPage = () => {
     try {
       setLoading(true);
       const response = await ProductService.getAllProducts();
-      setProducts(response.data);
+      console.log("Fetched products:", response.data.data); // Kiểm tra dữ liệu
+      // Kiểm tra xem response.data có phải là mảng không
+      if (Array.isArray(response.data.data)) {
+        setProducts(response.data.data); // Đảm bảo là mảng
+      } else {
+        setProducts([]); // Nếu không phải mảng, gán mảng rỗng
+        setError("Dữ liệu không hợp lệ.");
+      }
       setLoading(false);
     } catch (err) {
       console.error("Error fetching products:", err);
@@ -41,7 +48,7 @@ const ProductsPage = () => {
   const handleDeleteProduct = async (productId) => {
     try {
       await ProductService.deleteProduct(productId);
-      setProducts(products.filter((p) => p.id !== productId));
+      setProducts(products.filter((p) => p.product_id !== productId)); // Sử dụng product_id
     } catch (error) {
       console.error("Error deleting product:", error);
     }

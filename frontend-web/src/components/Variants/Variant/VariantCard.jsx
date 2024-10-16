@@ -7,14 +7,28 @@ import {
   CardActionArea,
   Box,
 } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // Thay đổi ở đây
+import ProductVariantService from "../../../services/ProductVariantService"; // Import service
 
 const VariantCard = ({ variant }) => {
+  const navigate = useNavigate(); // Sử dụng useNavigate
+
+  const handleVariantClick = async () => {
+    try {
+      const response = await ProductVariantService.getProductByVariantId(
+        variant.variant_id
+      );
+      const productId = response.data.product_id; // Giả sử API trả về product_id
+      navigate(`/products/product-detail/${productId}`); // Điều hướng đến trang sản phẩm
+    } catch (error) {
+      console.error("Error fetching product ID:", error);
+    }
+  };
+
   return (
     <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <CardActionArea
-        component={Link}
-        to={`/product/${variant.product_id}/variant/${variant.variant_id}`}
+        onClick={handleVariantClick} // Gọi hàm khi nhấp vào variant
         sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}
       >
         <CardMedia

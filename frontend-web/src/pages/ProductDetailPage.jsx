@@ -34,27 +34,27 @@ function ProductDetailPage() {
 
   useEffect(() => {
     const fetchProductData = async () => {
-      if (!productId) {
+      if (!id) {
         console.error("Product ID is undefined");
         return;
       }
       try {
-        const response = await ProductService.getProductById(productId);
+        const response = await ProductService.getProductById(id);
         setProduct(response.data);
         console.log("Product data:", response.data);
 
-        const variantsData = await ProductService.getVariantsByProductId(
-          productId
-        );
+        const variantsData = await ProductService.getVariantsByProductId(id);
         console.log("Variants data:", variantsData);
 
-        const variantsWithThumbnails = variantsData.map((variant) => ({
-          ...variant,
-          thumbnail: variant.thumbnail || variant.image,
-        }));
-        setVariants(
-          Array.isArray(variantsWithThumbnails) ? variantsWithThumbnails : []
-        );
+        // Kiểm tra nếu variantsData không phải là null
+        const variantsWithThumbnails = Array.isArray(variantsData)
+          ? variantsData.map((variant) => ({
+              ...variant,
+              thumbnail: variant.thumbnail || variant.image,
+            }))
+          : []; // Nếu không có variant, gán mảng rỗng
+
+        setVariants(variantsWithThumbnails);
         console.log("Variants with thumbnails:", variantsWithThumbnails);
 
         // Tạo mảng allImages bao gồm hình ảnh mặc định và thumbnail của các biến thể
@@ -73,24 +73,25 @@ function ProductDetailPage() {
         console.log("All images array:", allImagesArray);
 
         // Set default image
-        setSelectedVariantImage(response.data.default_image);
-        console.log("Selected variant image:", response.data.default_image);
-
-        // Fetch related products
         if (variantsWithThumbnails.length > 0) {
+          setSelectedVariantImage(variantsWithThumbnails[0].image);
+          // Fetch related products
           const relatedProductsData =
             await ProductVariantService.getRelatedVariants(
               variantsWithThumbnails[0].id
             );
           setRelatedProducts(relatedProductsData);
           setSelectedVariantId(variantsWithThumbnails[0].variant_id);
+        } else {
+          // Nếu không có variant, sử dụng default_image
+          setSelectedVariantImage(response.data.default_image);
         }
       } catch (error) {
         console.error("Error fetching product data:", error);
       }
     };
     fetchProductData();
-  }, [productId]);
+  }, [id]);
 
   if (!product) {
     return (

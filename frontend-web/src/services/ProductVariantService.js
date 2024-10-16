@@ -36,6 +36,16 @@ const ProductVariantService = {
       throw error;
     }
   },
+
+  getProductByVariantId: async (variantId) => {
+    try {
+      const response = await api.get(`/products/variant/${variantId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching product by variant ID:", error);
+      throw error;
+    }
+  },
 };
 
 export default ProductVariantService;

@@ -77,6 +77,15 @@ const UserService = {
       throw error.response.data;
     }
   },
+
+  getUserWishlist: async (userId) => {
+    try {
+      const response = await api.get(`/user/${userId}/wishlist`);
+      return response.data; // Giả sử API trả về danh sách yêu thích
+    } catch (error) {
+      throw error.response.data;
+    }
+  },
 };
 
 export default UserService;

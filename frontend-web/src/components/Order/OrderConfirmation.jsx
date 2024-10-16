@@ -153,7 +153,7 @@ const OrderConfirmation = ({
                 <TableCell>
                   <Box sx={{ display: "flex", alignItems: "center" }}>
                     <img
-                      src={item.image}
+                      src={item.thumbnail}
                       alt={item.variant_name}
                       style={{ width: 100, marginRight: 10 }}
                     />
