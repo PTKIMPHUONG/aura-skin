@@ -26,6 +26,9 @@ type UserService interface {
 	GetAllUsers() ([]models.User, error)
 	GetUserByRole(isAdmin bool) ([]models.User, error)
 	GetProductVariantsByUserID(userID string) ([]models.ProductVariant, error)
+	AddToWishlist(userID, variantID string) error
+	RemoveFromWishlist(userID, variantID string) error
+	GetUserWishlist(userID string) ([]models.ProductVariant, error)
 }
 
 type userService struct {
@@ -184,4 +187,16 @@ func (s *userService) GetUserByRole(isAdmin bool) ([]models.User, error) {
 
 func (s *userService) GetProductVariantsByUserID(userID string) ([]models.ProductVariant, error) {
     return s.repo.GetProductVariantsByUserID(userID)
+}
+
+func (s *userService) AddToWishlist(userID, variantID string) error {
+	return s.repo.AddToWishlist(userID, variantID)
+}
+
+func (s *userService) RemoveFromWishlist(userID, variantID string) error {
+	return s.repo.RemoveFromWishlist(userID, variantID)
+}
+
+func (s *userService) GetUserWishlist(userID string) ([]models.ProductVariant, error) {
+	return s.repo.GetUserWishlist(userID)
 }

@@ -1,9 +1,10 @@
 package models
 
 import (
-	"errors"
-	"time"
 	"auraskin/pkg/utils"
+	"errors"
+	"fmt"
+	"time"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j/dbtype"
 )
@@ -15,6 +16,17 @@ type Sale struct {
 	PercentSale float64 `json:"percent_sale"`
 	Description string  `json:"description"`
 	IsActive    bool    `json:"is_active"`
+}
+
+func (s *Sale) ToResponseMap() map[string]interface{} {
+	return map[string]interface{}{
+		"sale_id":      s.SaleID,
+		"date_start":   s.DateStart,
+		"date_end":     s.DateEnd,
+		"percent_sale": fmt.Sprintf("%.0f%%", s.PercentSale*100), // Display as percentage (e.g., "20%")
+		"description":  s.Description,
+		"is_active":    s.IsActive,
+	}
 }
 
 func (s *Sale) ToMap() map[string]interface{} {
@@ -31,45 +43,37 @@ func (s *Sale) ToMap() map[string]interface{} {
 func (s *Sale) FromMap(data map[string]interface{}) (*Sale, error) {
 	var dateStart, dateEnd string
 
-	tryParseDate := func(value string, formats ...string) (string, error) {
-		for _, format := range formats {
-			if t, err := time.Parse(format, value); err == nil {
-				return t.Format("2006-01-02"), nil 
+	tryParseDate := func(value interface{}) (string, error) {
+		switch v := value.(type) {
+		case string:
+			parsedDate, err := time.Parse("2006-01-02", v)
+			if err != nil {
+				return "", err
 			}
+			return parsedDate.Format("2006-01-02"), nil
+		case dbtype.Date:
+			return v.String(), nil
+		default:
+			return "", errors.New("invalid date format")
 		}
-		return "", errors.New("invalid date format")
 	}
 
-	// Xử lý trường date_start
+	//date_start
 	if val, ok := data["date_start"]; ok {
-		switch v := val.(type) {
-		case string:
-			parsedDate, err := tryParseDate(v, "2006-01-02", time.RFC3339)
-			if err != nil {
-				return nil, errors.New("invalid date_start format")
-			}
-			dateStart = parsedDate
-		case dbtype.Date:
-			dateStart = v.String()
-		default:
-			dateStart = ""
+		parsedDate, err := tryParseDate(val)
+		if err != nil {
+			return nil, err
 		}
+		dateStart = parsedDate
 	}
 
-	// Xử lý trường date_end
+	//date_end
 	if val, ok := data["date_end"]; ok {
-		switch v := val.(type) {
-		case string:
-			parsedDate, err := tryParseDate(v, "2006-01-02", time.RFC3339)
-			if err != nil {
-				return nil, errors.New("invalid date_end format")
-			}
-			dateEnd = parsedDate
-		case dbtype.Date:
-			dateEnd = v.String()
-		default:
-			dateEnd = ""
+		parsedDate, err := tryParseDate(val)
+		if err != nil {
+			return nil, err
 		}
+		dateEnd = parsedDate
 	}
 
 	return &Sale{

@@ -3,6 +3,7 @@ package services
 import (
 	"auraskin/internal/models"
 	"auraskin/internal/repositories"
+	"mime/multipart"
 )
 
 type ProductServiceInterface interface {
@@ -13,6 +14,8 @@ type ProductServiceInterface interface {
 	CreateProduct(product models.Product, categoryID string, supplierID string) error
 	UpdateProduct(id string, product models.Product) error
 	DeleteProduct(id string) error
+	UploadProductPicture(productID string, file multipart.File, fileHeader *multipart.FileHeader) (string, error) 
+	GetProductByVariantID(variantID string) (*models.Product, error) 
 }
 
 type ProductService struct {
@@ -49,4 +52,12 @@ func (s *ProductService) GetVariantsByProductID(productID string) ([]models.Prod
 
 func (s *ProductService) GetVariantsByProductName(productName string) ([]models.ProductVariant, error) {
 	return s.repo.GetVariantsByProductName(productName)
+}
+
+func (s *ProductService) UploadProductPicture(productID string, file multipart.File, fileHeader *multipart.FileHeader) (string, error) {
+	return s.repo.UploadProductPicture(productID, file, fileHeader)
+}
+
+func (s *ProductService) GetProductByVariantID(variantID string) (*models.Product, error) {
+	return s.repo.GetProductByVariantID(variantID )
 }

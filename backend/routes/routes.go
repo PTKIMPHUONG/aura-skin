@@ -17,4 +17,5 @@ func SetupRoutes(app *fiber.App) {
 	ProductVariantRoutes(app)
 	setupUserRoutes(app)
 	setupOrderRoutes(app)
+	SaleRoutes(app)
 }

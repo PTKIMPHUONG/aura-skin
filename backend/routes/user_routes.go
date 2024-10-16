@@ -29,4 +29,7 @@ func setupUserRoutes(app *fiber.App) {
 	userGroup.Get("/", controller.GetAllUsers) 
 	userGroup.Get("/users/admin", controller.GetUserByRole)   
 	userGroup.Get("/:id/product-variants", controller.GetProductVariantsByUserID)
+    userGroup.Post("/:user_id/wishlist/:variant_id", controller.AddToWishlist)  
+    userGroup.Delete("/:user_id/wishlist/:variant_id", controller.RemoveFromWishlist) 
+    userGroup.Get("/:user_id/wishlist", controller.GetUserWishlist) 
 }

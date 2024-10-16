@@ -119,9 +119,10 @@ func (repo *productVariantRepository) GetSuggestVariantsForUser(userID string) (
 		RETURN DISTINCT otherVariant AS recommendedVariant
 		UNION
 		// Dựa trên wishlist
-		MATCH (user:User {id: $userID})-[:HAS_WISHLIST]->(:Wishlist)-[:WISHES_FOR_VARIANT]->(wishlistVariant:ProductVariant)-[:BELONGS_TO]->(:Product)-[:BELONGS_TO]->(c:Category)
-		WITH c
+		MATCH (user:User {id: $userID})-[:WISHES_FOR]->(wishlistVariant:ProductVariant)-[:BELONGS_TO]->(:Product)-[:BELONGS_TO]->(c:Category)
+		WITH c, wishlistVariant
 		MATCH (otherVariant:ProductVariant)-[:BELONGS_TO]->(:Product)-[:BELONGS_TO]->(c)
+		WHERE NOT wishlistVariant = otherVariant
 		RETURN DISTINCT otherVariant AS recommendedVariant
 		UNION
 		// Dựa trên khuyến mãi
