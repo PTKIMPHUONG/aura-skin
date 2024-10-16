@@ -18,8 +18,11 @@ func SaleRoutes(app *fiber.App) {
 	saleGroup.Get("/", saleController.GetAllSales)                   
 	saleGroup.Get("/:id", saleController.GetSaleByID)                
 	saleGroup.Get("/search/start-date", saleController.GetSalesByDateStart)  
-	saleGroup.Get("search/end-date", saleController.GetSalesByDateEnd)      
+	saleGroup.Get("/search/end-date", saleController.GetSalesByDateEnd)      
 	saleGroup.Post("/create", saleController.CreateSale)              
 	saleGroup.Put("/update/:id", saleController.UpdateSale)           
-	saleGroup.Delete("/delete/:id", saleController.DeleteSale)        
+	saleGroup.Delete("/delete/:id", saleController.DeleteSale)      
+	saleGroup.Get("/filter-by/active-status", saleController.GetSalesByStatus)               
+	saleGroup.Get("/expired-sales", saleController.GetExpiredSales)              
+	saleGroup.Get("/search-by-description", saleController.SearchSalesByDescription)
 }

@@ -9,7 +9,8 @@ import (
 )
 
 func ProductRoutes(app *fiber.App) {
-	productRepo := repositories.NewProductRepository(neo4jDB)
+	storageRepository := repositories.NewStorageRepository()
+	productRepo := repositories.NewProductRepository(neo4jDB, storageRepository)
 	productService := services.NewProductService(productRepo)
 	productController := controllers.NewProductController(productService)
 
@@ -22,4 +23,6 @@ func ProductRoutes(app *fiber.App) {
 	productGroup.Post("/create", productController.CreateProduct)
 	productGroup.Put("/update/:id", productController.UpdateProduct)
 	productGroup.Delete("/delete/:id", productController.DeleteProduct)
+	productGroup.Post("/upload-product-picture/:product_id", productController.UploadProductPicture)
+	productGroup.Get("/variant/:variant_id", productController.GetProductByVariantID)
 }

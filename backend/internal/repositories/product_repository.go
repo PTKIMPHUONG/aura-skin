@@ -6,7 +6,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"mime/multipart"
 	"net/url"
+
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
 
@@ -18,14 +20,20 @@ type ProductRepository interface {
 	CreateProduct(product models.Product, categoryID string, supplierID string) error
 	UpdateProduct(id string, product models.Product) error
 	DeleteProduct(id string) error
+	UploadProductPicture(productID string, file multipart.File, fileHeader *multipart.FileHeader) (string, error)
+	GetProductByVariantID(variantID string) (*models.Product, error) 
 }
 
 type productRepository struct {
-	db *databases.Neo4jDB
+	db          *databases.Neo4jDB
+	storageRepo StorageRepository
 }
 
-func NewProductRepository(db *databases.Neo4jDB) ProductRepository {
-	return &productRepository{db: db}
+func NewProductRepository(db *databases.Neo4jDB, storageRepo StorageRepository) ProductRepository {
+	return &productRepository{
+		db:          db,
+		storageRepo: storageRepo,
+	}
 }
 
 func (repo *productRepository) GetAllProducts() ([]models.Product, error) {
@@ -350,4 +358,75 @@ func (repo *productRepository) DeleteProduct(id string) error {
 	}
 
 	return tx.Commit(ctx)
+}
+
+func (repo *productRepository) UploadProductPicture(productID string, file multipart.File, fileHeader *multipart.FileHeader) (string, error) {
+	ctx := context.Background()
+	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
+	defer session.Close(ctx)
+
+	productPictureUrl, err := repo.storageRepo.UploadFile(file, fileHeader, "product_images")
+	if err != nil {
+		return "", err
+	}
+
+	tx, err := session.BeginTransaction(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer tx.Close(ctx)
+
+	_, err = tx.Run(ctx,
+		"MATCH (p:Product{product_id: $product_id}) SET p.default_image = $product_picture_url RETURN u",
+		map[string]interface{}{
+			"product_id":                  productID,
+			"product_picture_url": productPictureUrl,
+		},
+	)
+	if err != nil {
+		fmt.Println("Error in updating product image in Update function:", err)
+		return "", err
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		fmt.Println("Failed to commit transaction:", err)
+		return "", err
+	}
+	fmt.Println("Successfully updated product image in Neo4j with URL:", productPictureUrl)
+	return productPictureUrl, nil
+}
+
+func (repo *productRepository) GetProductByVariantID(variantID string) (*models.Product, error) {
+	ctx := context.Background()
+	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
+	defer session.Close(ctx)
+
+	result, err := session.Run(ctx, `
+        MATCH (v:ProductVariant {variant_id: $variantID})-[:BELONGS_TO]->(p:Product) 
+        RETURN p
+    `, map[string]interface{}{
+		"variantID": variantID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if !result.Next(ctx) {
+		return nil, fmt.Errorf("no product found for variantID: %s", variantID)
+	}
+
+	record := result.Record()
+	node, _ := record.Get("p")
+	productNode := node.(neo4j.Node)
+
+	fmt.Println("Product Node Props:", productNode.Props)
+
+	productMap := productNode.Props
+	product, err := (&models.Product{}).FromMap(productMap)
+	if err != nil {
+		return nil, err
+	}
+
+	return product, nil
 }
