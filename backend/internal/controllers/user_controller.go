@@ -370,3 +370,60 @@ func (uc *UserController) GetProductVariantsByUserID(c *fiber.Ctx) error {
         Data:    productVariants,
     })
 }
+
+// Thêm sản phẩm vào wishlist
+func (uc *UserController) AddToWishlist(c *fiber.Ctx) error {
+	userID := c.Params("user_id")
+	variantID := c.Params("variant_id")
+
+	err := uc.service.AddToWishlist(userID, variantID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Không thể thêm sản phẩm vào wishlist",
+			Error:   err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+		Status:  fiber.StatusOK,
+		Message: "Sản phẩm đã được thêm vào wishlist",
+	})
+}
+
+// Xóa sản phẩm khỏi wishlist
+func (uc *UserController) RemoveFromWishlist(c *fiber.Ctx) error {
+	userID := c.Params("user_id")
+	variantID := c.Params("variant_id")
+
+	err := uc.service.RemoveFromWishlist(userID, variantID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Không thể xóa sản phẩm khỏi wishlist",
+			Error:   err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+		Status:  fiber.StatusOK,
+		Message: "Sản phẩm đã được xóa khỏi wishlist",
+	})
+}
+
+// Lấy danh sách wishlist của người dùng
+func (uc *UserController) GetUserWishlist(c *fiber.Ctx) error {
+	userID := c.Params("user_id")
+
+	wishlist, err := uc.service.GetUserWishlist(userID)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusNotFound,
+			Message: "Không tìm thấy wishlist cho người dùng này",
+			Error:   err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+		Status:  fiber.StatusOK,
+		Message: "Danh sách wishlist đã được lấy thành công",
+		Data:    wishlist,
+	})
+}

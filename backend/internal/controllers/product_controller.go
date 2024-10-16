@@ -4,6 +4,7 @@ import (
 	"auraskin/internal/models"
 	"auraskin/internal/services"
 	APIResponse "auraskin/pkg/api_response"
+	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -165,5 +166,61 @@ func (pc *ProductController) DeleteProduct(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
 		Status:  fiber.StatusOK,
 		Message: "Product deleted successfully",
+	})
+}
+
+func (pc *ProductController) UploadProductPicture(c *fiber.Ctx) error {
+	productID := c.Params("product_id")
+
+	fileHeader, err := c.FormFile("product_image")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusBadRequest,
+			Message: "Invalid file",
+			Error:   err.Error(),
+		})
+	}
+
+	file, err := fileHeader.Open()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Unable to open file",
+			Error:   err.Error(),
+		})
+	}
+	defer file.Close()
+
+	productPictureURL, err := pc.service.UploadProductPicture(productID, file, fileHeader)
+	if err != nil {
+		fmt.Println("Error in UploadProductPicture service:", err)
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to upload product picture",
+			Error:   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+		Status:  fiber.StatusOK,
+		Message: "Product picture uploaded successfully",
+		Data:    fiber.Map{"product_picture_url": productPictureURL},
+	})
+}
+
+func (pc *ProductController) GetProductByVariantID(c *fiber.Ctx) error {
+	variantID := c.Params("variant_id")
+	product, err := pc.service.GetProductByVariantID(variantID)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusNotFound,
+			Message: "Product not found for the specified variant",
+			Error:   err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+		Status:  fiber.StatusOK,
+		Message: "Product retrieved successfully",
+		Data:    product,
 	})
 }

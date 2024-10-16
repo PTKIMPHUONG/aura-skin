@@ -21,6 +21,9 @@ type UserRepository interface {
 	GetAllUsers() ([]models.User, error)
 	GetUserByRole(isAdmin bool) ([]models.User, error)
 	GetProductVariantsByUserID(userID string) ([]models.ProductVariant, error)
+	AddToWishlist(userID, variantID string) error
+	RemoveFromWishlist(userID, variantID string) error
+	GetUserWishlist(userID string) ([]models.ProductVariant, error)
 }
 
 type userRepository struct {
@@ -508,4 +511,94 @@ func (repo *userRepository) GetProductVariantsByUserID(userID string) ([]models.
     }
 
     return productVariants, nil
+}
+
+func (repo *userRepository) AddToWishlist(userID, variantID string) error {
+	ctx := context.Background()
+	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{
+		AccessMode: neo4j.AccessModeWrite,
+	})
+	defer session.Close(ctx)
+
+	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
+		_, err := tx.Run(ctx, `
+			MATCH (u:User {id: $userID, is_active: true}), (v:ProductVariant {variant_id: $variantID, is_active: true})
+			MERGE (u)-[r:WISHES_FOR {since: timestamp()}]->(v)
+			RETURN u, v
+		`, map[string]interface{}{
+			"userID":    userID,
+			"variantID": variantID,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repo *userRepository) RemoveFromWishlist(userID, variantID string) error {
+	ctx := context.Background()
+	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{
+		AccessMode: neo4j.AccessModeWrite,
+	})
+	defer session.Close(ctx)
+
+	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
+		_, err := tx.Run(ctx, `
+			MATCH (u:User {id: $userID})-[r:WISHES_FOR]->(v:ProductVariant {variant_id: $variantID})
+			DELETE r
+			RETURN u, v
+		`, map[string]interface{}{
+			"userID":    userID,
+			"variantID": variantID,
+		})
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repo *userRepository) GetUserWishlist(userID string) ([]models.ProductVariant, error) {
+	ctx := context.Background()
+	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{
+		AccessMode: neo4j.AccessModeRead,
+	})
+	defer session.Close(ctx)
+
+	result, err := session.Run(ctx, `
+		MATCH (u:User {id: $userID})-[r:WISHES_FOR]->(v:ProductVariant)
+		RETURN v
+	`, map[string]interface{}{
+		"userID": userID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var variants []models.ProductVariant
+	for result.Next(ctx) {
+		record := result.Record()
+		node, _ := record.Get("v")
+		variantNode := node.(neo4j.Node)
+
+		variantMap := variantNode.Props
+		variant, err := (&models.ProductVariant{}).FromMap(variantMap)
+		if err != nil {
+			return nil, err
+		}
+		variants = append(variants, *variant)
+	}
+
+	return variants, nil
 }
