@@ -4,6 +4,8 @@ const authService = {
   login: async (email, password) => {
     try {
       const response = await api.post("/user/login", { email, password });
+      console.log("API response:", response.data); // Thêm dòng này để kiểm tra phản hồi
+
       if (response.data && response.data.status === 200 && response.data.data) {
         const userData = {
           token: response.data.data.token,
@@ -14,7 +16,7 @@ const authService = {
             phoneNumber: response.data.data.data.phone_number,
             isAdmin: response.data.data.data.is_admin,
             deliveryAddresses: response.data.data.data.delivery_addresses || [],
-            imageUser: response.data.data.data.imageUser || null,
+            user_image: response.data.data.data.user_image || null,
           },
         };
         authService.saveUserToStorage(userData);
@@ -26,6 +28,7 @@ const authService = {
       };
     } catch (error) {
       console.error("Login error:", error);
+      console.error("Error response:", error.response); // Thêm dòng này để kiểm tra lỗi chi tiết
       return {
         success: false,
         message: error.response?.data?.message || "Có lỗi xảy ra khi đăng nhập",

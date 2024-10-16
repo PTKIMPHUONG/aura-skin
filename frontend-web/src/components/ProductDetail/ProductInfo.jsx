@@ -6,13 +6,16 @@ import {
   Box,
   TextField,
   useTheme,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { CartContext } from "../../context/CartContext";
 
 function ProductInfo({ product, variants, onVariantSelect }) {
   const [quantity, setQuantity] = useState(1);
-  const [selectedVariant, setSelectedVariant] = useState(variants[0]);
+  const [selectedVariant, setSelectedVariant] = useState(null);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
   const { addToCart } = useContext(CartContext);
   const navigate = useNavigate();
   const theme = useTheme();
@@ -24,23 +27,38 @@ function ProductInfo({ product, variants, onVariantSelect }) {
   const price = selectedVariant?.price || product.default_price;
 
   const handleBuyNow = () => {
-    const itemToAdd = selectedVariant
-      ? { ...selectedVariant, product_name: product.product_name }
-      : product;
+    if (!selectedVariant) {
+      setOpenSnackbar(true);
+      return;
+    }
+    const itemToAdd = {
+      ...selectedVariant,
+      product_name: product.product_name,
+    };
     addToCart({ ...itemToAdd, quantity });
-    navigate("/order-confirmation");
+    navigate("/order-confirmation", {
+      state: {
+        cartItems: [{ ...itemToAdd, quantity }],
+        totalPrice: price * quantity,
+      },
+    });
   };
 
   const handleAddToCart = () => {
-    const itemToAdd = selectedVariant
-      ? { ...selectedVariant, product_name: product.product_name }
-      : product;
+    if (!selectedVariant) {
+      setOpenSnackbar(true);
+      return;
+    }
+    const itemToAdd = {
+      ...selectedVariant,
+      product_name: product.product_name,
+    };
     addToCart({ ...itemToAdd, quantity });
   };
 
   const handleVariantSelect = (variant) => {
     setSelectedVariant(variant);
-    onVariantSelect(variant.image);
+    onVariantSelect(variant);
   };
 
   return (
@@ -70,8 +88,8 @@ function ProductInfo({ product, variants, onVariantSelect }) {
             onClick={() => handleVariantSelect(variant)}
             sx={{
               mb: 1,
-              justifyContent: "center",
-              textAlign: "center",
+              justifyContent: "flex-start",
+              textAlign: "left",
               height: "auto",
               padding: "10px",
               whiteSpace: "normal",
@@ -96,7 +114,19 @@ function ProductInfo({ product, variants, onVariantSelect }) {
               transition: "background-color 0.3s, color 0.3s",
             }}
           >
-            {variant.variant_name}
+            <Box display="flex" alignItems="center">
+              <img
+                src={variant.thumbnail || variant.image}
+                alt={variant.variant_name}
+                style={{
+                  width: "30px",
+                  height: "30px",
+                  marginRight: "10px",
+                  objectFit: "cover",
+                }}
+              />
+              {variant.variant_name}
+            </Box>
           </Button>
         ))}
       </Box>
@@ -149,6 +179,20 @@ function ProductInfo({ product, variants, onVariantSelect }) {
           THÊM VÀO GIỎ
         </Button>
       </Box>
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={() => setOpenSnackbar(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setOpenSnackbar(false)}
+          severity="warning"
+          sx={{ width: "100%" }}
+        >
+          Vui lòng chọn phân loại sản phẩm trước khi mua hàng.
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

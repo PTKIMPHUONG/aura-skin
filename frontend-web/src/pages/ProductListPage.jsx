@@ -27,7 +27,7 @@ const ProductListPage = () => {
       try {
         const response = await ProductService.getAllProducts();
         // Giả sử API trả về một đối tượng có thuộc tính 'data' chứa mảng sản phẩm
-        const productsData = response.data || [];
+        const productsData = response.data.data || [];
         setProducts(Array.isArray(productsData) ? productsData : []);
         setLoading(false);
       } catch (err) {

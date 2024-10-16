@@ -32,9 +32,17 @@ const Login = () => {
     const password = formData.get("password");
     try {
       const result = await authService.login(email, password);
+      console.log("Login result:", result);
       if (result.success) {
-        login(result.user, result.token);
-        navigate("/");
+        await login(result.user, result.token);
+        console.log("User after login:", result.user);
+        if (result.user.isAdmin) {
+          console.log("User is admin, redirecting to admin page");
+          navigate("/admin");
+        } else {
+          console.log("User is not admin, redirecting to home page");
+          navigate("/");
+        }
       } else {
         setError(result.message);
       }

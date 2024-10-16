@@ -10,6 +10,14 @@ const OrderService = {
       throw error;
     }
   },
+  createOrder: async (orderData) => {
+    try {
+      const response = await api.post("/order/create", orderData);
+      return response.data;
+    } catch (error) {
+      throw error.response.data;
+    }
+  },
 };
 
 export default OrderService;

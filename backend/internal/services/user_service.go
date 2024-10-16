@@ -36,7 +36,6 @@ func NewUserService(repo repositories.UserRepository) UserService {
 	return &userService{repo: repo}
 }
 
-
 // Register a new user
 func (s *userService) Register(user *models.User) error {
 	// Kiểm tra nếu các trường cần thiết có dữ liệu hợp lệ
@@ -183,5 +182,5 @@ func (s *userService) GetUserByRole(isAdmin bool) ([]models.User, error) {
 }
 
 func (s *userService) GetProductVariantsByUserID(userID string) ([]models.ProductVariant, error) {
-    return s.repo.GetProductVariantsByUserID(userID)
+	return s.repo.GetProductVariantsByUserID(userID)
 }

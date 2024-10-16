@@ -6,29 +6,40 @@ import {
   ListItemIcon,
   ListItemText,
   Toolbar,
+  Divider,
 } from "@mui/material";
 import {
-  Dashboard,
-  Inventory,
-  Category,
-  People,
-  ShoppingCart,
-  Storage,
+  Dashboard as DashboardIcon,
+  ShoppingCart as ProductIcon,
+  People as UserIcon,
+  Assignment as OrderIcon,
+  ExitToApp as LogoutIcon,
 } from "@mui/icons-material";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/Authcontext";
 
 const drawerWidth = 240;
 
-const menuItems = [
-  { text: "Dashboard", icon: <Dashboard />, path: "/admin" },
-  { text: "Products", icon: <Inventory />, path: "/admin/products" },
-  { text: "Categories", icon: <Category />, path: "/admin/categories" },
-  { text: "Customers", icon: <People />, path: "/admin/customers" },
-  { text: "Orders", icon: <ShoppingCart />, path: "/admin/orders" },
-  { text: "Stocks", icon: <Storage />, path: "/admin/stocks" },
-];
+const AdminSidebar = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
-const SidebarAdmin = () => {
+  const menuItems = [
+    { text: "Dashboard", icon: <DashboardIcon />, path: "/admin" },
+    { text: "Sản phẩm", icon: <ProductIcon />, path: "/admin/products" },
+    { text: "Người dùng", icon: <UserIcon />, path: "/admin/users" },
+    { text: "Đơn hàng", icon: <OrderIcon />, path: "/admin/orders" },
+  ];
+
+  const handleNavigation = (path) => {
+    navigate(path);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
   return (
     <Drawer
       variant="permanent"
@@ -41,14 +52,27 @@ const SidebarAdmin = () => {
       <Toolbar />
       <List>
         {menuItems.map((item) => (
-          <ListItem button key={item.text} component={Link} to={item.path}>
+          <ListItem
+            button
+            key={item.text}
+            onClick={() => handleNavigation(item.path)}
+          >
             <ListItemIcon>{item.icon}</ListItemIcon>
             <ListItemText primary={item.text} />
           </ListItem>
         ))}
       </List>
+      <Divider />
+      <List>
+        <ListItem button onClick={handleLogout}>
+          <ListItemIcon>
+            <LogoutIcon />
+          </ListItemIcon>
+          <ListItemText primary="Đăng xuất" />
+        </ListItem>
+      </List>
     </Drawer>
   );
 };
 
-export default SidebarAdmin;
+export default AdminSidebar;

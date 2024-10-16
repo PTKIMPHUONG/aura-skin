@@ -77,7 +77,7 @@ const Navigation = () => {
   };
 
   const handleCategoryClick = (categoryId) => {
-    navigate(`/category/${categoryId}`);
+    navigate(`/categories/${categoryId}/products`);
   };
 
   const renderMenu = (menu, items, label) => {

@@ -1,23 +1,38 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   TextField,
   Button,
   Grid,
   Avatar,
-  Radio,
-  RadioGroup,
-  FormControlLabel,
   Input,
+  CircularProgress,
 } from "@mui/material";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
-import authService from "../../services/AuthService";
+import UserService from "../../services/UserService";
+import { useAuth } from "../../context/Authcontext";
 
-const defaultAvatar = require("../../assets/images/defaultImageUser.png"); // Thêm đường dẫn đến ảnh mặc định
+const defaultAvatar = require("../../assets/images/defaultImageUser.png");
 
 const UserProfileForm = ({ profileData, onUpdateProfile }) => {
   const [formData, setFormData] = useState(profileData);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [previewImage, setPreviewImage] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const { user, updateUser } = useAuth();
+
+  useEffect(() => {
+    if (selectedFile) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result);
+      };
+      reader.readAsDataURL(selectedFile);
+    } else {
+      setPreviewImage(null);
+    }
+  }, [selectedFile]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -28,30 +43,72 @@ const UserProfileForm = ({ profileData, onUpdateProfile }) => {
   };
 
   const handleFileChange = (event) => {
-    setSelectedFile(event.target.files[0]);
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+    }
   };
 
   const handleFileUpload = async () => {
-    if (selectedFile) {
+    if (selectedFile && user) {
+      setIsUploading(true);
       try {
-        // Giả sử AuthService có phương thức uploadProfilePicture
-        const response = await authService.uploadProfilePicture(selectedFile);
-        if (response.success) {
+        console.log("Selected file:", selectedFile);
+        const response = await UserService.uploadProfilePicture(
+          user.id,
+          selectedFile
+        );
+        console.log("Upload response:", response);
+        if (response.status === 200) {
           setFormData((prevData) => ({
             ...prevData,
-            imageUser: response.data.imageUrl,
+            user_image: response.data.user_image,
           }));
+          updateUser({
+            ...user,
+            user_image: response.data.user_image,
+          });
+          setPreviewImage(null);
+          setSelectedFile(null);
+          alert("Cập nhật ảnh đại diện thành công");
+        } else {
+          throw new Error(response.message || "Có lỗi xảy ra khi tải ảnh lên");
         }
       } catch (error) {
-        console.error("Error uploading profile picture:", error);
-        // Hiển thị thông báo lỗi
+        console.error("Error in handleFileUpload:", error);
+        let errorMessage = "Lỗi khi tải ảnh lên: ";
+        if (error.response && error.response.data) {
+          errorMessage += `${
+            error.response.data.message || "Lỗi server không xác định"
+          }. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.`;
+        } else if (error.request) {
+          errorMessage +=
+            "Không nhận được phản hồi từ server. Vui lòng kiểm tra kết nối mạng và thử lại.";
+        } else {
+          errorMessage += "Đã xảy ra lỗi không xác định. Vui lòng thử lại sau.";
+        }
+        alert(errorMessage);
+      } finally {
+        setIsUploading(false);
       }
     }
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    onUpdateProfile(formData);
+    setIsUpdating(true);
+    try {
+      const response = await UserService.updateUserProfile(user.id, formData);
+      if (response.success) {
+        onUpdateProfile(response.data);
+        updateUser(response.data);
+      }
+    } catch (error) {
+      console.error("Error updating user profile:", error);
+      // Hiển thị thông báo lỗi
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   return (
@@ -96,8 +153,9 @@ const UserProfileForm = ({ profileData, onUpdateProfile }) => {
             fullWidth
             variant="contained"
             sx={{ mt: 3, mb: 2 }}
+            disabled={isUpdating}
           >
-            Cập nhật thông tin
+            {isUpdating ? <CircularProgress size={24} /> : "Cập nhật thông tin"}
           </Button>
         </Grid>
         <Grid
@@ -111,7 +169,7 @@ const UserProfileForm = ({ profileData, onUpdateProfile }) => {
           }}
         >
           <Avatar
-            src={formData.imageUser || defaultAvatar}
+            src={previewImage || formData.user_image || defaultAvatar}
             sx={{ width: 150, height: 150, mb: 2 }}
           />
           <Input
@@ -128,7 +186,7 @@ const UserProfileForm = ({ profileData, onUpdateProfile }) => {
               startIcon={<CloudUploadIcon />}
               sx={{ mt: 2 }}
             >
-              Tải ảnh mới
+              Chọn ảnh mới
             </Button>
           </label>
           {selectedFile && (
@@ -136,8 +194,13 @@ const UserProfileForm = ({ profileData, onUpdateProfile }) => {
               onClick={handleFileUpload}
               variant="outlined"
               sx={{ mt: 2 }}
+              disabled={isUploading}
             >
-              Cập nhật ảnh đại diện
+              {isUploading ? (
+                <CircularProgress size={24} />
+              ) : (
+                "Cập nhật ảnh đại diện"
+              )}
             </Button>
           )}
         </Grid>

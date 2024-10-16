@@ -3,16 +3,15 @@ import { Box, IconButton } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 
-function ProductImageGallery({ images, selectedVariantImage }) {
-  const [mainImage, setMainImage] = useState(images[0]);
+function ProductImageGallery({ images, selectedImage, onImageSelect }) {
   const [startIndex, setStartIndex] = useState(0);
   const visibleImages = 4; // Số lượng hình ảnh hiển thị cùng lúc
 
   useEffect(() => {
-    if (selectedVariantImage) {
-      setMainImage(selectedVariantImage);
+    if (selectedImage && images.some((img) => img.image === selectedImage)) {
+      onImageSelect(selectedImage);
     }
-  }, [selectedVariantImage]);
+  }, [selectedImage, images, onImageSelect]);
 
   if (!images || images.length === 0) {
     return null;
@@ -33,7 +32,7 @@ function ProductImageGallery({ images, selectedVariantImage }) {
     <Box>
       <Box mb={2} sx={{ maxWidth: "100%", margin: "0 auto" }}>
         <img
-          src={mainImage}
+          src={selectedImage || (images[0] && images[0].image)}
           alt="Main product"
           style={{ width: "100%", height: "auto", objectFit: "contain" }}
         />
@@ -59,16 +58,19 @@ function ProductImageGallery({ images, selectedVariantImage }) {
                 }}
               >
                 <img
-                  src={image}
+                  src={image.thumbnail}
                   alt={`Product view ${startIndex + index + 1}`}
                   style={{
                     width: "100%",
                     height: "auto",
                     cursor: "pointer",
                     objectFit: "cover",
-                    border: image === mainImage ? "2px solid #1976d2" : "none",
+                    border:
+                      image.image === selectedImage
+                        ? "2px solid #1976d2"
+                        : "none",
                   }}
-                  onClick={() => setMainImage(image)}
+                  onClick={() => onImageSelect(image.image)}
                 />
               </Box>
             ))}

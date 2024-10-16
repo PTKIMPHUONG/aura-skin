@@ -39,6 +39,8 @@ const SidebarUser = () => {
     navigate("/login");
   };
 
+  console.log("User image URL:", user.user_image);
+
   return (
     <Box sx={{ width: 240, borderRight: "1px solid #e0e0e0", height: "100%" }}>
       <Box
@@ -49,7 +51,7 @@ const SidebarUser = () => {
           alignItems: "center",
         }}
       >
-        <Avatar src={user.imageUser} sx={{ width: 80, height: 80, mb: 1 }} />
+        <Avatar src={user.user_image} sx={{ width: 80, height: 80, mb: 1 }} />
         <Typography variant="subtitle1">{user.username}</Typography>
         <Typography variant="body2" color="text.secondary">
           {user.email}

@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { Box, Container, Typography } from "@mui/material";
+import { Box, Container, Typography, Snackbar } from "@mui/material";
 import SidebarUser from "../components/Sidebar/SidebarUser";
 import UserProfileForm from "../components/Users/UserProfileForm";
 import { useAuth } from "../context/Authcontext";
-import AuthService from "../services/AuthService";
+import UserService from "../services/UserService";
 
 const UserProfilePage = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [profileData, setProfileData] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "" });
 
   useEffect(() => {
     if (user) {
@@ -17,15 +18,21 @@ const UserProfilePage = () => {
 
   const handleUpdateProfile = async (updatedData) => {
     try {
-      // Giả sử AuthService có phương thức updateUserProfile
-      const response = await AuthService.updateUserProfile(updatedData);
+      const response = await UserService.updateUserProfile(
+        user.id,
+        updatedData
+      );
       if (response.success) {
         setProfileData(response.data);
-        // Hiển thị thông báo cập nhật thành công
+        updateUser(response.data);
+        setSnackbar({ open: true, message: "Cập nhật thông tin thành công" });
       }
     } catch (error) {
       console.error("Error updating user profile:", error);
-      // Hiển thị thông báo lỗi
+      setSnackbar({
+        open: true,
+        message: "Có lỗi xảy ra khi cập nhật thông tin",
+      });
     }
   };
 
@@ -47,6 +54,12 @@ const UserProfilePage = () => {
           />
         </Box>
       </Box>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        message={snackbar.message}
+      />
     </Container>
   );
 };

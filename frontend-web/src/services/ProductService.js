@@ -4,7 +4,7 @@ const ProductService = {
   getAllProducts: async () => {
     try {
       const response = await api.get("/products");
-      return response.data;
+      return response; // Trả về toàn bộ response, không chỉ response.data
     } catch (error) {
       console.error("Error fetching all products:", error);
       throw error;
@@ -88,6 +88,27 @@ const ProductService = {
       return response.data;
     } catch (error) {
       console.error("Error fetching products by category:", error);
+      throw error;
+    }
+  },
+
+  getFeaturedProducts: async () => {
+    try {
+      const response = await api.get("/products");
+      // Có thể lọc hoặc lấy một số sản phẩm ��ầu tiên làm sản phẩm nổi bật
+      return response.data.slice(0, 4);
+    } catch (error) {
+      console.error("Error fetching featured products:", error);
+      throw error;
+    }
+  },
+
+  getNewProducts: async () => {
+    try {
+      const response = await api.get("/products/new");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching new products:", error);
       throw error;
     }
   },

@@ -3,11 +3,11 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import theme from "./theme";
-import Header from "./components/Header/Header";
+import MainLayout from "./components/Layout/MainLayout";
+import HomePage from "./pages/HomePage";
 import ProductListPage from "./pages/ProductListPage";
 import ProductDetailPage from "./pages/ProductDetailPage";
-import Footer from "./components/Footer/Footer";
-import HomePage from "./pages/HomePage";
+import CategoryProductListPage from "./pages/CategoryProductListPage";
 import Login from "./components/LoginRegister/Login";
 import Register from "./components/LoginRegister/Register";
 import ForgotPassword from "./components/LoginRegister/ForgotPass";
@@ -20,8 +20,10 @@ import UserCartPage from "./pages/UserCartPage";
 import UserOrdersPage from "./pages/UserOrdersPage";
 import UserAddressesPage from "./pages/UserAddressesPage";
 import OrderConfirmationPage from "./pages/OrderConfirmationPage";
-import CategoryProductListPage from "./pages/CategoryProductListPage";
 import { CartProvider } from "./context/CartContext";
+import AdminRoute from "./components/Auth/AdminRoute";
+import AdminProductsPage from "./pages/Admin/AdminProductsPage";
+
 function App() {
   return (
     <AuthProvider>
@@ -29,36 +31,49 @@ function App() {
         <ThemeProvider theme={theme}>
           <CssBaseline />
           <Router>
-            <Header />
             <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/" element={<HomePage />} />
-              <Route path="/products" element={<ProductListPage />} />
-              <Route
-                path="/categories/:categoryId/products"
-                element={<CategoryProductListPage />}
-              />
-              <Route
-                path="/products/product-detail/:id"
-                element={<ProductDetailPage />}
-              />
-              <Route element={<ProtectedRoute />}>
-                <Route path="/user/profile" element={<UserProfilePage />} />
-                <Route path="/user/cart" element={<UserCartPage />} />
-                <Route path="/user/orders" element={<UserOrdersPage />} />
-                <Route path="/user/addresses" element={<UserAddressesPage />} />
-                {/* <Route path="/user/coupons" element={<UserCouponsPage />} /> */}
-                <Route path="/user/favorites" element={<UserFavoritesPage />} />
+              {/* Admin routes */}
+              <Route element={<AdminRoute />}>
+                <Route path="/admin/*" element={<AdminProductsPage />} />
+              </Route>
+
+              {/* User routes with MainLayout */}
+              <Route element={<MainLayout />}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/products" element={<ProductListPage />} />
                 <Route
-                  path="/order-confirmation"
-                  element={<OrderConfirmationPage />}
+                  path="/categories/:categoryId/products"
+                  element={<CategoryProductListPage />}
                 />
+                <Route
+                  path="/products/product-detail/:id"
+                  element={<ProductDetailPage />}
+                />
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/user/profile" element={<UserProfilePage />} />
+                  <Route path="/user/cart" element={<UserCartPage />} />
+                  <Route path="/user/orders" element={<UserOrdersPage />} />
+                  <Route
+                    path="/user/addresses"
+                    element={<UserAddressesPage />}
+                  />
+                  {/* <Route path="/user/coupons" element={<UserCouponsPage />} /> */}
+
+                  <Route
+                    path="/user/favorites"
+                    element={<UserFavoritesPage />}
+                  />
+                  <Route
+                    path="/order-confirmation"
+                    element={<OrderConfirmationPage />}
+                  />
+                </Route>
               </Route>
             </Routes>
-            <Footer />
           </Router>
         </ThemeProvider>
       </CartProvider>

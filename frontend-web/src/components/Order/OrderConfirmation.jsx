@@ -15,6 +15,9 @@ import {
   Grid,
   TextField,
 } from "@mui/material";
+import AddressModal from "../Modals/AddressModal";
+import UserService from "../../services/UserService";
+import { useAuth } from "../../context/Authcontext";
 
 const OrderConfirmation = ({
   cartItems,
@@ -25,6 +28,8 @@ const OrderConfirmation = ({
   const [selectedAddressId, setSelectedAddressId] = useState(
     userAddresses[0]?.id || ""
   );
+  const [openAddressModal, setOpenAddressModal] = useState(false);
+  const { user } = useAuth();
 
   const handleAddressChange = (event) => {
     setSelectedAddressId(event.target.value);
@@ -32,6 +37,24 @@ const OrderConfirmation = ({
 
   const selectedAddress =
     userAddresses.find((address) => address.id === selectedAddressId) || {};
+
+  const handleOpenAddressModal = () => {
+    setOpenAddressModal(true);
+  };
+
+  const handleCloseAddressModal = () => {
+    setOpenAddressModal(false);
+  };
+
+  const handleSaveNewAddress = async (newAddress) => {
+    try {
+      const response = await UserService.addUserAddress(user.id, newAddress);
+      // Cập nhật danh sách địa chỉ sau khi thêm mới
+      // Bạn có thể cần cập nhật state ở component cha hoặc gọi lại API để lấy danh sách địa chỉ mới
+    } catch (error) {
+      console.error("Error adding new address:", error);
+    }
+  };
 
   const shippingFee = 30000;
   const totalPayment = totalPrice + shippingFee;
@@ -42,7 +65,6 @@ const OrderConfirmation = ({
         Đặt hàng
       </Typography>
 
-      {/* Địa chỉ nhận hàng */}
       <Paper sx={{ p: 2, mb: 3, bgcolor: "#f3f4f6" }}>
         <Typography variant="subtitle1" gutterBottom>
           Địa chỉ nhận hàng
@@ -55,16 +77,24 @@ const OrderConfirmation = ({
         >
           {userAddresses.map((address) => (
             <MenuItem key={address.id} value={address.id}>
-              {address.fullName} - {address.address}
+              {address.recipient_name} - {address.address_line}
             </MenuItem>
           ))}
         </Select>
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={handleOpenAddressModal}
+          sx={{ mb: 2 }}
+        >
+          Thêm địa chỉ mới
+        </Button>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={4}>
             <TextField
               fullWidth
               label="Họ và tên"
-              value={selectedAddress.fullName || ""}
+              value={selectedAddress.recipient_name || ""}
               InputProps={{ readOnly: true }}
               variant="outlined"
             />
@@ -73,7 +103,7 @@ const OrderConfirmation = ({
             <TextField
               fullWidth
               label="Số điện thoại"
-              value={selectedAddress.phone || ""}
+              value={selectedAddress.contact_number || ""}
               InputProps={{ readOnly: true }}
               variant="outlined"
             />
@@ -82,20 +112,15 @@ const OrderConfirmation = ({
             <TextField
               fullWidth
               label="Địa chỉ"
-              value={selectedAddress.address || ""}
+              value={
+                `${selectedAddress.address_line}, ${selectedAddress.ward}, ${selectedAddress.district}, ${selectedAddress.province}, ${selectedAddress.country}` ||
+                ""
+              }
               InputProps={{ readOnly: true }}
               variant="outlined"
             />
           </Grid>
         </Grid>
-        <Box sx={{ mt: 1, textAlign: "right" }}>
-          <Button href="#" color="primary">
-            Sửa
-          </Button>
-          <Button href="#" color="primary">
-            Xóa
-          </Button>
-        </Box>
       </Paper>
 
       {/* Danh sách sản phẩm */}
@@ -129,11 +154,13 @@ const OrderConfirmation = ({
                   <Box sx={{ display: "flex", alignItems: "center" }}>
                     <img
                       src={item.image}
-                      alt={item.name}
+                      alt={item.variant_name}
                       style={{ width: 100, marginRight: 10 }}
                     />
                     <Box>
-                      <Typography variant="body1">{item.name}</Typography>
+                      <Typography variant="body1">
+                        {item.variant_name}
+                      </Typography>
                       <Typography variant="body2" color="text.secondary">
                         Phân loại: {item.category}
                       </Typography>
@@ -218,6 +245,12 @@ const OrderConfirmation = ({
           Đặt hàng
         </Button>
       </Box>
+
+      <AddressModal
+        open={openAddressModal}
+        onClose={handleCloseAddressModal}
+        onSave={handleSaveNewAddress}
+      />
     </Box>
   );
 };

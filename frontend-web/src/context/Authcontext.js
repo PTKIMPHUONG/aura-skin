@@ -14,25 +14,26 @@ export const AuthProvider = ({ children }) => {
       if (storedAuthData) {
         setUser(storedAuthData.user);
         setToken(storedAuthData.token);
-        setIsAdmin(storedAuthData.user.is_admin || false);
+        setIsAdmin(storedAuthData.user.isAdmin || false);
       }
     };
 
     loadUserFromStorage();
   }, []);
 
-  const login = (userData, userToken) => {
-    setUser(userData);
-    setToken(userToken);
-    setIsAdmin(userData.is_admin || false);
-    authService.saveUserToStorage({ user: userData, token: userToken });
+  const login = async (user, token) => {
+    console.log("Logging in user:", user);
+    setUser(user);
+    setToken(token);
+    setIsAdmin(user.isAdmin); // Đảm bảo đang sử dụng đúng tên trường
+    // Lưu thông tin vào localStorage nếu cần
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
     setIsAdmin(false);
-    authService.removeUserFromStorage();
+    authService.logout();
   };
 
   const isAuthenticated = () => {

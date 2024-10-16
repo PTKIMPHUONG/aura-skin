@@ -180,9 +180,9 @@ function Header() {
             {user ? (
               <>
                 <IconButton onClick={handleMenuOpen} sx={iconStyle}>
-                  {user.imageUser ? (
+                  {user.user_image ? (
                     <Avatar
-                      src={user.imageUser}
+                      src={user.user_image}
                       alt={user.username}
                       sx={{ width: 32, height: 32 }}
                     />
