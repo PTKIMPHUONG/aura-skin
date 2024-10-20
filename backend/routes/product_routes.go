@@ -16,13 +16,15 @@ func ProductRoutes(app *fiber.App) {
 
 	productGroup := app.Group("/products")
 
-	productGroup.Get("/", productController.GetAllProducts)
-	productGroup.Get("/:id", productController.GetProductByID)
-	productGroup.Get("/:product_id/product-variants", productController.GetVariantsByProductID)
-	productGroup.Get("/search/:product_name/product-variants", productController.GetVariantsByProductName)
-	productGroup.Post("/create", productController.CreateProduct)
-	productGroup.Put("/update/:id", productController.UpdateProduct)
-	productGroup.Delete("/delete/:id", productController.DeleteProduct)
-	productGroup.Post("/upload-product-picture/:product_id", productController.UploadProductPicture)
-	productGroup.Get("/variant/:variant_id", productController.GetProductByVariantID)
+	productGroup.Get("/search-by-name", productController.GetProductByName)
+    productGroup.Get("/variant/:variant_id", productController.GetProductByVariantID)
+    productGroup.Get("/search/:product_name/product-variants", productController.GetVariantsByProductName)
+    productGroup.Post("/create", productController.CreateProduct)
+    productGroup.Post("/upload-product-picture/:product_id", productController.UploadProductPicture)
+
+    productGroup.Get("/:id", productController.GetProductByID)
+    productGroup.Put("/update/:id", productController.UpdateProduct)
+    productGroup.Delete("/delete/:id", productController.DeleteProduct)
+
+    productGroup.Get("/", productController.GetAllProducts)
 }
