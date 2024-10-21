@@ -5,6 +5,7 @@ import (
 	"auraskin/internal/services"
 	APIResponse "auraskin/pkg/api_response"
 	"fmt"
+	"net/url"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -224,3 +225,39 @@ func (pc *ProductController) GetProductByVariantID(c *fiber.Ctx) error {
 		Data:    product,
 	})
 }
+
+func (pc *ProductController) GetProductByName(c *fiber.Ctx) error {
+	productName := c.Query("product_name") 
+	if productName == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusBadRequest,
+			Message: "Product name is required",
+		})
+	}
+
+	fmt.Println("GetProductByName called")
+	decodedProductName, err := url.QueryUnescape(productName)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusBadRequest,
+			Message: "Error decoding product name",
+			Error:   err.Error(),
+		})
+	}
+
+	products, err := pc.service.GetProductByName(decodedProductName)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusNotFound,
+			Message: "Products not found",
+			Error:   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+		Status:  fiber.StatusOK,
+		Message: "Products retrieved successfully",
+		Data:    products,
+	})
+}
+

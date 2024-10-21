@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"mime/multipart"
 	"net/url"
+	"strconv"
+	"strings"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 )
@@ -22,6 +24,7 @@ type ProductRepository interface {
 	DeleteProduct(id string) error
 	UploadProductPicture(productID string, file multipart.File, fileHeader *multipart.FileHeader) (string, error)
 	GetProductByVariantID(variantID string) (*models.Product, error) 
+	GetProductByName(productName string) ([]models.Product, error)
 }
 
 type productRepository struct {
@@ -430,3 +433,74 @@ func (repo *productRepository) GetProductByVariantID(variantID string) (*models.
 
 	return product, nil
 }
+
+func (repo *productRepository) GetProductByName(productName string) ([]models.Product, error) {
+	ctx := context.Background()
+	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
+	defer session.Close(ctx)
+
+	decodedProductName, err := url.QueryUnescape(productName)
+	if err != nil {
+		fmt.Println("Error decoding product name:", err)
+		return nil, fmt.Errorf("error decoding product name: %v", err)
+	}
+
+	// Tách tên sản phẩm thành mảng các từ khóa
+	keywords := strings.Fields(decodedProductName) 
+	fmt.Println("Decoded product name:", decodedProductName) 
+
+	if len(keywords) == 0 {
+		return nil, errors.New("no valid product name provided")
+	}
+
+	query := `MATCH (p:Product) WHERE `
+
+	// Thêm điều kiện cho mỗi từ khóa
+	for i := range keywords {
+		if i > 0 {
+			query += " AND " // Thêm từ khóa tiếp theo với điều kiện AND
+		}
+		query += `toLower(p.product_name) CONTAINS toLower($keyword` + strconv.Itoa(i) + `)`
+	}
+
+	query += " RETURN p"
+
+	// Map các từ khóa vào tham số truy vấn
+	params := make(map[string]interface{})
+	for i, keyword := range keywords {
+		// Ánh xạ các từ khóa vào tham số trong query
+		params["keyword"+strconv.Itoa(i)] = keyword
+	}
+
+	// Chạy truy vấn trong Neo4j
+	result, err := session.Run(ctx, query, params)
+	if err != nil {
+		return nil, err
+	}
+
+	var products []models.Product
+	for result.Next(ctx) {
+		record := result.Record()
+		node, found := record.Get("p")
+		if !found {
+			return nil, errors.New("no products found")
+		}
+
+		productNode := node.(neo4j.Node)
+		productMap := productNode.Props
+		product, err := (&models.Product{}).FromMap(productMap)
+		if err != nil {
+			return nil, err
+		}
+		products = append(products, *product)
+	}
+
+	if len(products) == 0 {
+		fmt.Println("No products found with name:", decodedProductName) 
+		return nil, errors.New("no products found with name " + decodedProductName)
+	}
+
+	fmt.Println("Number of products found:", len(products)) 
+	return products, nil
+}
+

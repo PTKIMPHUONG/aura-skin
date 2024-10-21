@@ -16,6 +16,7 @@ type ProductServiceInterface interface {
 	DeleteProduct(id string) error
 	UploadProductPicture(productID string, file multipart.File, fileHeader *multipart.FileHeader) (string, error) 
 	GetProductByVariantID(variantID string) (*models.Product, error) 
+	GetProductByName(productName string) ([]models.Product, error)
 }
 
 type ProductService struct {
@@ -60,4 +61,8 @@ func (s *ProductService) UploadProductPicture(productID string, file multipart.F
 
 func (s *ProductService) GetProductByVariantID(variantID string) (*models.Product, error) {
 	return s.repo.GetProductByVariantID(variantID )
+}
+
+func (s *ProductService) GetProductByName(productName string) ([]models.Product, error){
+	return s.repo.GetProductByName(productName) 
 }
