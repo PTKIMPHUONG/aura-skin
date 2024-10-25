@@ -6,6 +6,7 @@ import (
 	APIResponse "auraskin/pkg/api_response"
 	"fmt"
 	"net/url"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -261,3 +262,118 @@ func (pc *ProductController) GetProductByName(c *fiber.Ctx) error {
 	})
 }
 
+func (pc *ProductController) FilterByPriceRange(c *fiber.Ctx) error {
+    minPrice, err := strconv.ParseFloat(c.Query("min_price"), 64)
+    if err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(APIResponse.ErrorResponse{
+            Status:  fiber.StatusBadRequest,
+            Message: "Min price is not valid",
+        })
+    }
+
+    maxPrice, err := strconv.ParseFloat(c.Query("max_price"), 64)
+    if err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(APIResponse.ErrorResponse{
+            Status:  fiber.StatusBadRequest,
+            Message: "Max price is not valid",
+        })
+    }
+
+    products, err := pc.service.FilterByPriceRange(minPrice, maxPrice)
+    if err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(APIResponse.ErrorResponse{
+            Status:  fiber.StatusNotFound,
+            Message: "No products found in this price range",
+            Error:   err.Error(),
+        })
+    }
+
+    return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+        Status:  fiber.StatusOK,
+        Message: "List of products by price range",
+        Data:    products,
+    })
+}
+
+func (pc *ProductController) SortByPrice(c *fiber.Ctx) error {
+    order := c.Query("order", "asc") 
+    
+    products, err := pc.service.SortByPrice(order)
+    if err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+            Status:  fiber.StatusInternalServerError,
+            Message: "Unable to sort products",
+            Error:   err.Error(),
+        })
+    }
+
+    return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+        Status:  fiber.StatusOK,
+        Message: "List of products sorted by price",
+        Data:    products,
+    })
+}
+
+func (pc *ProductController) SortByNewest(c *fiber.Ctx) error {
+    products, err := pc.service.SortByNewest()
+    if err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+            Status:  fiber.StatusInternalServerError,
+            Message: "Unable to sort products",
+            Error:   err.Error(),
+        })
+    }
+
+    return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+        Status:  fiber.StatusOK,
+        Message: "List of products in order of newest",
+        Data:    products,
+    })
+}
+
+func (pc *ProductController) GetProductsBySupplier(c *fiber.Ctx) error {
+	supplierName := c.Query("supplier_name")
+	if supplierName == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusBadRequest,
+			Message: "Supplier name is required",
+		})
+	}
+
+	products, err := pc.service.GetProductsBySupplier(supplierName)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusNotFound,
+			Message: "Products from supplier not found",
+			Error:   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+		Status:  fiber.StatusOK,
+		Message: "Products retrieved successfully",
+		Data:    products,
+	})
+}
+
+func (pc *ProductController) FilterProducts(c *fiber.Ctx) error {
+    categoryID := c.Query("category_id")
+	supplierID := c.Query("supplier_id")
+    minPrice, _ := strconv.ParseFloat(c.Query("min_price", "0"), 64)
+    maxPrice, _ := strconv.ParseFloat(c.Query("max_price", "0"), 64)
+
+    products, err := pc.service.FilterProducts(categoryID, supplierID, minPrice, maxPrice)
+    if err != nil {
+        return c.Status(fiber.StatusNotFound).JSON(APIResponse.ErrorResponse{
+            Status:  fiber.StatusNotFound,
+            Message: "No products found with the applied filters",
+            Error:   err.Error(),
+        })
+    }
+
+    return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+        Status:  fiber.StatusOK,
+        Message: "Filtered products retrieved successfully",
+        Data:    products,
+    })
+}
