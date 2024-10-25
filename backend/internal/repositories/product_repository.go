@@ -25,6 +25,11 @@ type ProductRepository interface {
 	UploadProductPicture(productID string, file multipart.File, fileHeader *multipart.FileHeader) (string, error)
 	GetProductByVariantID(variantID string) (*models.Product, error) 
 	GetProductByName(productName string) ([]models.Product, error)
+	FilterByPriceRange(minPrice, maxPrice float64) ([]models.Product, error)
+	SortByPrice(order string) ([]models.Product, error)
+	SortByNewest() ([]models.Product, error) 
+	GetProductsBySupplier(supplierName string) ([]models.Product, error)
+	FilterProducts(categoryID, supplierID string, minPrice, maxPrice float64) ([]models.Product, error)
 }
 
 type productRepository struct {
@@ -504,3 +509,196 @@ func (repo *productRepository) GetProductByName(productName string) ([]models.Pr
 	return products, nil
 }
 
+func (repo *productRepository) FilterByPriceRange(minPrice, maxPrice float64) ([]models.Product, error) {
+    ctx := context.Background()
+    session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
+    defer session.Close(ctx)
+
+    query := `MATCH (p:Product) WHERE p.default_price >= $minPrice AND p.default_price <= $maxPrice RETURN p`
+    params := map[string]interface{}{
+        "minPrice": minPrice,
+        "maxPrice": maxPrice,
+    }
+
+    result, err := session.Run(ctx, query, params)
+    if err != nil {
+        return nil, err
+    }
+
+    var products []models.Product
+    for result.Next(ctx) {
+        record := result.Record()
+        node, found := record.Get("p")
+        if !found {
+            continue
+        }
+        productNode := node.(neo4j.Node)
+        productMap := productNode.Props
+        product, err := (&models.Product{}).FromMap(productMap)
+        if err != nil {
+            return nil, err
+        }
+        products = append(products, *product)
+    }
+
+    return products, nil
+}
+
+func (repo *productRepository) SortByPrice(order string) ([]models.Product, error) {
+    ctx := context.Background()
+    session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
+    defer session.Close(ctx)
+
+    query := `MATCH (p:Product) RETURN p ORDER BY p.default_price `
+    if order == "desc" {
+        query += "DESC"
+    } else {
+        query += "ASC"
+    }
+
+    result, err := session.Run(ctx, query, nil)
+    if err != nil {
+        return nil, err
+    }
+
+    var products []models.Product
+    for result.Next(ctx) {
+        record := result.Record()
+        node, found := record.Get("p")
+        if !found {
+            continue
+        }
+        productNode := node.(neo4j.Node)
+        productMap := productNode.Props
+        product, err := (&models.Product{}).FromMap(productMap)
+        if err != nil {
+            return nil, err
+        }
+        products = append(products, *product)
+    }
+
+    return products, nil
+}
+
+func (repo *productRepository) SortByNewest() ([]models.Product, error) {
+    ctx := context.Background()
+    session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
+    defer session.Close(ctx)
+
+    query := `MATCH (p:Product) RETURN p ORDER BY p.created_at DESC`
+
+    result, err := session.Run(ctx, query, nil)
+    if err != nil {
+        return nil, err
+    }
+
+    var products []models.Product
+    for result.Next(ctx) {
+        record := result.Record()
+        node, found := record.Get("p")
+        if !found {
+            continue
+        }
+        productNode := node.(neo4j.Node)
+        productMap := productNode.Props
+        product, err := (&models.Product{}).FromMap(productMap)
+        if err != nil {
+            return nil, err
+        }
+        products = append(products, *product)
+    }
+
+    return products, nil
+}
+
+func (repo *productRepository) GetProductsBySupplier(supplierName string) ([]models.Product, error) {
+	ctx := context.Background()
+	session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
+	defer session.Close(ctx)
+
+	query := `
+		MATCH (p:Product)-[:SUPPLIER_OF]->(s:Supplier)
+		WHERE toLower(s.supplier_name) = toLower($supplier_name)
+		RETURN p
+	`
+
+	params := map[string]interface{}{
+		"supplier_name": supplierName,
+	}
+
+	result, err := session.Run(ctx, query, params)
+	if err != nil {
+		return nil, err
+	}
+
+	var products []models.Product
+	for result.Next(ctx) {
+		record := result.Record()
+		node, found := record.Get("p")
+		if !found {
+			return nil, errors.New("no products found")
+		}
+
+		productNode := node.(neo4j.Node)
+		productMap := productNode.Props
+		product, err := (&models.Product{}).FromMap(productMap)
+		if err != nil {
+			return nil, err
+		}
+		products = append(products, *product)
+	}
+
+	if len(products) == 0 {
+		return nil, errors.New("no products found for supplier " + supplierName)
+	}
+
+	return products, nil
+}
+
+func (repo *productRepository) FilterProducts(categoryID, supplierID string, minPrice, maxPrice float64) ([]models.Product, error) {
+    ctx := context.Background()
+    session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
+    defer session.Close(ctx)
+
+    query := "MATCH (p:Product)<-[:BELONGS_TO]-(v:ProductVariant) WHERE p.is_active = true"
+    params := make(map[string]interface{})
+
+    // Sử dụng ID của Category và Supplier để lọc
+    if categoryID != "" {
+        query += " AND (p)-[:BELONGS_TO]->(:Category {category_id: $categoryID})"
+        params["categoryID"] = categoryID
+    }
+    if supplierID != "" {
+        query += " AND (p)-[:SUPPLIER_OF]->(:Supplier {supplier_id: $supplierID})"
+        params["supplierID"] = supplierID
+    }
+    if minPrice > 0 {
+        query += " AND v.price >= $minPrice"
+        params["minPrice"] = minPrice
+    }
+    if maxPrice > 0 {
+        query += " AND v.price <= $maxPrice"
+        params["maxPrice"] = maxPrice
+    }
+
+    query += " RETURN DISTINCT p"
+    result, err := session.Run(ctx, query, params)
+    if err != nil {
+        return nil, err
+    }
+
+    var products []models.Product
+    for result.Next(ctx) {
+        record := result.Record()
+        node, _ := record.Get("p")
+        productNode := node.(neo4j.Node)
+        productMap := productNode.Props
+        product, err := (&models.Product{}).FromMap(productMap)
+        if err != nil {
+            return nil, err
+        }
+        products = append(products, *product)
+    }
+
+    return products, nil
+}

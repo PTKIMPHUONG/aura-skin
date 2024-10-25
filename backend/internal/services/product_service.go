@@ -17,6 +17,11 @@ type ProductServiceInterface interface {
 	UploadProductPicture(productID string, file multipart.File, fileHeader *multipart.FileHeader) (string, error) 
 	GetProductByVariantID(variantID string) (*models.Product, error) 
 	GetProductByName(productName string) ([]models.Product, error)
+	FilterByPriceRange(minPrice, maxPrice float64) ([]models.Product, error)
+	SortByPrice(order string) ([]models.Product, error)
+	SortByNewest() ([]models.Product, error) 
+	GetProductsBySupplier(supplierName string) ([]models.Product, error)
+	FilterProducts(categoryID, supplierID string, minPrice, maxPrice float64) ([]models.Product, error)
 }
 
 type ProductService struct {
@@ -65,4 +70,24 @@ func (s *ProductService) GetProductByVariantID(variantID string) (*models.Produc
 
 func (s *ProductService) GetProductByName(productName string) ([]models.Product, error){
 	return s.repo.GetProductByName(productName) 
+}
+
+func (s *ProductService) FilterByPriceRange(minPrice, maxPrice float64) ([]models.Product, error) {
+    return s.repo.FilterByPriceRange(minPrice, maxPrice)
+}
+
+func (s *ProductService) SortByPrice(order string) ([]models.Product, error) {
+    return s.repo.SortByPrice(order)
+}
+
+func (s *ProductService) SortByNewest() ([]models.Product, error) {
+    return s.repo.SortByNewest()
+}
+
+func (s *ProductService) GetProductsBySupplier(supplierName string) ([]models.Product, error) {
+	return s.repo.GetProductsBySupplier(supplierName)
+}
+
+func (s *ProductService) FilterProducts(categoryID, supplierID string, minPrice, maxPrice float64) ([]models.Product, error) {
+    return s.repo.FilterProducts(categoryID, supplierID, minPrice, maxPrice)
 }
