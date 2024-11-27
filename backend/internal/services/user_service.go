@@ -29,6 +29,9 @@ type UserService interface {
 	AddToWishlist(userID, variantID string) error
 	RemoveFromWishlist(userID, variantID string) error
 	GetUserWishlist(userID string) ([]models.ProductVariant, error)
+	AddToCart(userID, variantID string, quantity int) error 
+	RemoveFromCart(userID, variantID string) error 
+	GetUserCart(userID string) ([]map[string]interface{}, error)
 }
 
 type userService struct {
@@ -199,4 +202,16 @@ func (s *userService) RemoveFromWishlist(userID, variantID string) error {
 
 func (s *userService) GetUserWishlist(userID string) ([]models.ProductVariant, error) {
 	return s.repo.GetUserWishlist(userID)
+}
+
+func (s *userService) AddToCart(userID, variantID string, quantity int) error {
+	return s.repo.AddToCart(userID, variantID, quantity)
+}
+
+func (s *userService) RemoveFromCart(userID, variantID string) error {
+	return s.repo.RemoveFromCart(userID, variantID)
+}
+
+func (s *userService) GetUserCart(userID string) ([]map[string]interface{}, error) {
+	return s.repo.GetUserCart(userID)
 }

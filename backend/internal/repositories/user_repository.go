@@ -24,6 +24,9 @@ type UserRepository interface {
 	AddToWishlist(userID, variantID string) error
 	RemoveFromWishlist(userID, variantID string) error
 	GetUserWishlist(userID string) ([]models.ProductVariant, error)
+	AddToCart(userID, variantID string, quantity int) error 
+	RemoveFromCart(userID, variantID string) error 
+	GetUserCart(userID string) ([]map[string]interface{}, error)
 }
 
 type userRepository struct {
@@ -601,4 +604,97 @@ func (repo *userRepository) GetUserWishlist(userID string) ([]models.ProductVari
 	}
 
 	return variants, nil
+}
+
+func (repo *userRepository) AddToCart(userID, variantID string, quantity int) error {
+    ctx := context.Background()
+    session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{
+        AccessMode: neo4j.AccessModeWrite,
+    })
+    defer session.Close(ctx)
+
+    _, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
+        _, err := tx.Run(ctx, `
+            MATCH (u:User {id: $userID, is_active: true}), (v:ProductVariant {variant_id: $variantID, is_active: true})
+            MERGE (u)-[r:ADDED_TO_CART]->(v)
+            ON CREATE SET r.quantity = $quantity, r.added_at = timestamp()
+            ON MATCH SET r.quantity = r.quantity + $quantity
+            RETURN u, v
+        `, map[string]interface{}{
+            "userID":   userID,
+            "variantID": variantID,
+            "quantity":  quantity,
+        })
+        if err != nil {
+            return nil, err
+        }
+        return nil, nil
+    })
+
+    return err
+}
+
+func (repo *userRepository) RemoveFromCart(userID, variantID string) error {
+    ctx := context.Background()
+    session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{
+        AccessMode: neo4j.AccessModeWrite,
+    })
+    defer session.Close(ctx)
+
+    _, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
+        _, err := tx.Run(ctx, `
+            MATCH (u:User {id: $userID})-[r:ADDED_TO_CART]->(v:ProductVariant {variant_id: $variantID})
+            DELETE r
+            RETURN u, v
+        `, map[string]interface{}{
+            "userID":    userID,
+            "variantID": variantID,
+        })
+        return nil, err
+    })
+
+    return err
+}
+
+func (repo *userRepository) GetUserCart(userID string) ([]map[string]interface{}, error) {
+    ctx := context.Background()
+    session := repo.db.Driver.NewSession(ctx, neo4j.SessionConfig{
+        AccessMode: neo4j.AccessModeRead,
+    })
+    defer session.Close(ctx)
+
+    result, err := session.Run(ctx, `
+        MATCH (u:User {id: $userID})-[r:ADDED_TO_CART]->(v:ProductVariant)
+        RETURN {
+            thumbnail: v.thumbnail,
+            variant_name: v.variant_name,
+            price: v.price,
+            size: v.size,
+            color: v.color,
+            quantity: r.quantity,
+            added_at: apoc.date.format(r.added_at, 'yyyy-MM-dd HH:mm:ss', 'UTC') // Chuyển đổi định dạng
+        } AS cart_item
+    `, map[string]interface{}{
+        "userID": userID,
+    })
+
+    if err != nil {
+		fmt.Println("Error executing query:", err)
+        return nil, err
+    }
+
+    var cartItems []map[string]interface{}
+    for result.Next(ctx) {
+        record := result.Record()
+		fmt.Println(record)
+        cartItem, _ := record.Get("cart_item")
+		if err != nil {
+            fmt.Println("Error getting cart_item from record:", err)
+            continue // Skip this record if there's an error
+        }
+        cartItems = append(cartItems, cartItem.(map[string]interface{}))
+    }
+
+	fmt.Println("Fetched cart items:", cartItems)
+    return cartItems, nil
 }

@@ -427,3 +427,78 @@ func (uc *UserController) GetUserWishlist(c *fiber.Ctx) error {
 		Data:    wishlist,
 	})
 }
+
+func (uc *UserController) AddToCart(c *fiber.Ctx) error {
+	userID := c.Params("user_id")
+	var body struct {
+		VariantID string `json:"variant_id"`
+		Quantity  int    `json:"quantity"`
+	}
+
+    if err := c.BodyParser(&body); err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(APIResponse.ErrorResponse{
+            Status:  fiber.StatusBadRequest,
+            Message: "Cannot parse JSON",
+            Error:   err.Error(),
+        })
+    }
+
+	err := uc.service.AddToCart(userID, body.VariantID, body.Quantity)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to add to cart",
+			Error:   err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+		Status:  fiber.StatusOK,
+		Message: "Added to cart successfully",
+	})
+}
+
+func (uc *UserController) RemoveFromCart(c *fiber.Ctx) error {
+	userID := c.Params("user_id")
+	variantID := c.Params("variant_id")
+
+	err := uc.service.RemoveFromCart(userID, variantID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusInternalServerError,
+			Message: "Failed to remove from cart",
+			Error:   err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+		Status:  fiber.StatusOK,
+		Message: "Removed from cart successfully",
+	})
+}
+
+func (uc *UserController) GetUserCart(c *fiber.Ctx) error {
+	userID := c.Params("user_id")
+
+	cartItems, err := uc.service.GetUserCart(userID)
+	if err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(APIResponse.ErrorResponse{
+			Status:  fiber.StatusNotFound,
+			Message: "Failed to retrieve cart",
+			Error:   err.Error(),
+		})
+	}
+	if len(cartItems) == 0 {
+		return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+			Status:  fiber.StatusOK,
+			Message: "Retrieved cart successfully, but it's empty",
+			Data:    []map[string]interface{}{}, // Trả về mảng rỗng
+		})
+	}
+	
+	return c.Status(fiber.StatusOK).JSON(APIResponse.SuccessResponse{
+		Status:  fiber.StatusOK,
+		Message: "Retrieved cart successfully",
+		Data:    cartItems,
+	})
+	
+}
